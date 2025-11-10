@@ -1,0 +1,459 @@
+### Delivery App API - Comprehensive Documentation & Tests
+### Base URL: http://localhost:4000
+### Documentation: http://localhost:4000/api/docs
+### ====================================================== 
+
+@apiUrl = http://localhost:4000/api
+@clientToken = Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiMmE5ZGI3Ny0xOWQ2LTQxNmQtYTI1OC01NGJhYWI0NDZjMTIiLCJyb2xlIjoiY2xpZW50IiwiaWF0IjoxNzYyODEzMzI0LCJleHAiOjE3NjI4MTY5MjR9.NhiW6320estAbVFeN8nV4QzugwjnbtoJG1g7hoGsxIg
+@driverToken = Bearer YOUR_DRIVER_TOKEN_HERE
+@adminToken = Bearer YOUR_ADMIN_TOKEN_HERE
+
+# client
+# @email = ktsyr1@gmail.com
+# driver
+@email = driver@app.com
+# admin
+# @email = admin@app.com
+
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+{
+  "email": "{{email}}",
+  "password": "password123"
+}
+
+### ============================================
+### 5. Order Management Endpoints 
+
+@apiUrl = http://localhost:4000/api
+# @clientToken
+@driverToken = Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5NGY1OWQ5OC1kYjIyLTQ4YzItOTVlYS03OTEyMmNlNjQzMTMiLCJyb2xlIjoiZHJpdmVyIiwiaWF0IjoxNzYyODE0Nzg5LCJleHAiOjE3NjI4MTgzODl9.E-ZubWEDAin6FzSedpU8ChwtJWGBHPVOwlDa0jeR3bw
+@addressId=355c3013-b510-4827-9194-2fe3ad73c0a1
+@orderId=d2634bec-9997-4a70-b33d-78a86cc0d4b3
+
+# GET {{apiUrl}}/orders/driver/pending
+# Authorization: {{driverToken}}
+# Content-Type: application/json
+
+POST {{apiUrl}}/orders/{{orderId}}/accept
+Authorization: {{driverToken}}
+Content-Type: application/json
+
+POST {{apiUrl}}/orders/{{orderId}}/reject
+Authorization: {{driverToken}}
+Content-Type: application/json
+
+
+###
+### ============================================
+### 6. Location & Tracking Endpoints
+### ============================================
+
+### Update Driver Location
+PUT {{apiUrl}}/location/driver
+Authorization: {{driverToken}}
+Content-Type: application/json
+
+{
+  "lat": 30.0444,
+  "lng": 31.2357,
+  "status": "available"
+}
+
+### Track Order Location
+GET {{apiUrl}}/location/order/{{orderId}}
+Authorization: {{clientToken}}
+Content-Type: application/json
+
+### Get Nearby Drivers
+GET {{apiUrl}}/location/nearby-drivers?lat=30.0444&lng=31.2357&radius=10
+Authorization: {{clientToken}}
+Content-Type: application/json
+
+###
+### ============================================
+### 7. Messaging Endpoints
+### ============================================
+
+### Send Message to Order
+# @name sendOrderMessage
+POST {{apiUrl}}/messages
+Authorization: {{clientToken}}
+Content-Type: application/json
+
+{
+  "order_id": "{{orderId}}",
+  "content": "Hello, where are you now?",
+  "message_type": "text"
+}
+
+### Send Message to User (Direct Message)
+POST {{apiUrl}}/messages
+Authorization: {{clientToken}}
+Content-Type: application/json
+
+{
+  "to_user": "{{driverId}}",
+  "content": "Thanks for the delivery!",
+  "message_type": "text"
+}
+
+### Send Audio Message
+POST {{apiUrl}}/messages
+Authorization: {{clientToken}}
+Content-Type: application/json
+
+{
+  "order_id": "{{orderId}}",
+  "content": "Voice message recording",
+  "message_type": "audio",
+  "attachments": ["https://example.com/audio.mp3"]
+}
+
+### Get Order Messages
+GET {{apiUrl}}/messages/order/{{orderId}}
+Authorization: {{clientToken}}
+Content-Type: application/json
+
+### Mark Message as Read
+PUT {{apiUrl}}/messages/{{messageId}}/read
+Authorization: {{clientToken}}
+Content-Type: application/json
+
+###
+### ============================================
+### 8. Ratings Endpoints
+### ============================================
+
+### Create Rating (Client Only)
+POST {{apiUrl}}/ratings
+Authorization: {{clientToken}}
+Content-Type: application/json
+
+{
+  "order_id": "{{orderId}}",
+  "driver_id": "{{driverId}}",
+  "score": 5,
+  "comment": "Excellent service! Very professional driver."
+}
+
+### Get Driver Ratings
+GET {{apiUrl}}/ratings/driver/{{driverId}}
+Authorization: {{clientToken}}
+Content-Type: application/json
+
+###
+### ============================================
+### 9. Complaints Endpoints
+### ============================================
+
+### Create Complaint (Client Only)
+# @name createComplaint
+POST {{apiUrl}}/complaints
+Authorization: {{clientToken}}
+Content-Type: application/json
+
+{
+  "order_id": "{{orderId}}",
+  "description": "The driver was late and the delivery was damaged",
+  "photo_urls": [
+    "https://example.com/complaint1.jpg",
+    "https://example.com/complaint2.jpg"
+  ]
+}
+
+### Get Complaint Details
+GET {{apiUrl}}/complaints/{{complaintId}}
+Authorization: {{clientToken}}
+Content-Type: application/json
+
+###
+### ============================================
+### 10. Admin Endpoints
+### ============================================
+
+### Get All Orders (Admin Only)
+GET {{apiUrl}}/admin/orders?page=1&limit=20&status=pending
+Authorization: {{adminToken}}
+Content-Type: application/json
+
+### Get All Orders with Filters
+GET {{apiUrl}}/admin/orders?status=delivered&date_from=2024-01-01&date_to=2024-12-31&client_id={{clientId}}
+Authorization: {{adminToken}}
+Content-Type: application/json
+
+### Get All Drivers (Admin Only)
+GET {{apiUrl}}/admin/drivers?page=1&limit=20&status=available
+Authorization: {{adminToken}}
+Content-Type: application/json
+
+### Update Driver Status (Admin Only)
+PUT {{apiUrl}}/admin/drivers/{{driverId}}
+Authorization: {{adminToken}}
+Content-Type: application/json
+
+{
+  "status": "suspended",
+  "notes": "Driver violated company policy"
+}
+
+### Get Analytics (Admin Only)
+GET {{apiUrl}}/admin/analytics?period=monthly
+Authorization: {{adminToken}}
+Content-Type: application/json
+
+### Get All Complaints (Admin Only)
+GET {{apiUrl}}/admin/complaints?page=1&limit=20&status=pending
+Authorization: {{adminToken}}
+Content-Type: application/json
+
+###
+### ============================================
+### 11. Complete Workflow Tests
+### ============================================
+
+###
+### Test Scenario 1: Complete Order Flow
+###
+
+### Step 1: Register Client
+# @name testRegisterClient
+POST {{apiUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Test Client",
+  "email": "testclient@example.com",
+  "phone": "+201000000001",
+  "password": "test123",
+  "role": "client"
+}
+
+### Step 2: Register Driver
+# @name testRegisterDriver
+POST {{apiUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Test Driver",
+  "email": "testdriver@example.com",
+  "phone": "+201000000002",
+  "password": "test123",
+  "role": "driver"
+}
+
+### Step 3: Client Login
+# @name testClientLogin
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "testclient@example.com",
+  "password": "test123"
+}
+
+### Step 4: Driver Login
+# @name testDriverLogin
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "testdriver@example.com",
+  "password": "test123"
+}
+
+### Step 5: Create Address (as Client)
+POST {{apiUrl}}/users/addresses
+Authorization: Bearer {{testClientLogin.response.body.$.access_token}}
+Content-Type: application/json
+
+{
+  "city": "Cairo",
+  "street": "123 Test Street",
+  "label": "Home",
+  "lat": 30.0444,
+  "lng": 31.2357,
+  "is_default": true
+}
+
+### Step 6: Create Order (as Client)
+POST {{apiUrl}}/orders
+Authorization: Bearer {{testClientLogin.response.body.$.access_token}}
+Content-Type: application/json
+
+{
+  "content": "Test delivery order",
+  "dropoff_address_id": "{{addressId}}",
+  "payment_method": "cash"
+}
+
+### Step 7: Driver Updates Location
+PUT {{apiUrl}}/location/driver
+Authorization: Bearer {{testDriverLogin.response.body.$.access_token}}
+Content-Type: application/json
+
+{
+  "lat": 30.0444,
+  "lng": 31.2357,
+  "status": "available"
+}
+
+### Step 8: Driver Gets Pending Orders
+GET {{apiUrl}}/orders/driver/pending
+Authorization: Bearer {{testDriverLogin.response.body.$.access_token}}
+
+### Step 9: Driver Accepts Order
+POST {{apiUrl}}/orders/{{orderId}}/accept
+Authorization: Bearer {{testDriverLogin.response.body.$.access_token}}
+
+### Step 10: Driver Updates Order Status
+PUT {{apiUrl}}/orders/{{orderId}}/status
+Authorization: Bearer {{testDriverLogin.response.body.$.access_token}}
+Content-Type: application/json
+
+{
+  "status": "picked_up"
+}
+
+### Step 11: Client Sends Message
+POST {{apiUrl}}/messages
+Authorization: Bearer {{testClientLogin.response.body.$.access_token}}
+Content-Type: application/json
+
+{
+  "order_id": "{{orderId}}",
+  "content": "Are you on your way?",
+  "message_type": "text"
+}
+
+### Step 12: Driver Updates Status to In Transit
+PUT {{apiUrl}}/orders/{{orderId}}/status
+Authorization: Bearer {{testDriverLogin.response.body.$.access_token}}
+Content-Type: application/json
+
+{
+  "status": "in_transit"
+}
+
+### Step 13: Driver Marks Order as Delivered
+PUT {{apiUrl}}/orders/{{orderId}}/status
+Authorization: Bearer {{testDriverLogin.response.body.$.access_token}}
+Content-Type: application/json
+
+{
+  "status": "delivered"
+}
+
+### Step 14: Client Rates Driver
+POST {{apiUrl}}/ratings
+Authorization: Bearer {{testClientLogin.response.body.$.access_token}}
+Content-Type: application/json
+
+{
+  "order_id": "{{orderId}}",
+  "driver_id": "{{driverId}}",
+  "score": 5,
+  "comment": "Great service!"
+}
+
+###
+### Test Scenario 2: Error Cases
+###
+
+### Test: Register with Existing Email (Should Fail)
+POST {{apiUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Duplicate User",
+  "email": "testclient@example.com",
+  "phone": "+201000000003",
+  "password": "test123",
+  "role": "client"
+}
+
+### Test: Login with Wrong Password (Should Fail)
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "testclient@example.com",
+  "password": "wrongpassword"
+}
+
+### Test: Create Order Without Address (Should Fail)
+POST {{apiUrl}}/orders
+Authorization: {{clientToken}}
+Content-Type: application/json
+
+{
+  "content": "Test order",
+  "dropoff_address_id": "invalid-uuid",
+  "payment_method": "cash"
+}
+
+### Test: Access Protected Route Without Token (Should Fail)
+GET {{apiUrl}}/users/profile
+Content-Type: application/json
+
+### Test: Client Trying to Access Driver Route (Should Fail)
+GET {{apiUrl}}/orders/driver/pending
+Authorization: {{clientToken}}
+Content-Type: application/json
+
+###
+### ============================================
+### 12. Pagination Examples
+### ============================================
+
+### Paginated Order History (Page 1)
+GET {{apiUrl}}/orders/client/history?page=1&limit=10
+Authorization: {{clientToken}}
+
+### Paginated Order History (Page 2)
+GET {{apiUrl}}/orders/client/history?page=2&limit=10
+Authorization: {{clientToken}}
+
+### Filtered Order History by Status
+GET {{apiUrl}}/orders/client/history?status=delivered&page=1&limit=10
+Authorization: {{clientToken}}
+
+### Paginated Admin Orders
+GET {{apiUrl}}/admin/orders?page=1&limit=50
+Authorization: {{adminToken}}
+
+###
+### ============================================
+### 13. File Upload Examples
+### ============================================
+
+### Upload Profile Photo
+POST {{apiUrl}}/users/profile-photo
+Authorization: {{clientToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="profile_photo"; filename="avatar.jpg"
+Content-Type: image/jpeg
+
+< ./uploads/profiles/avatar.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Upload Multiple Proof Photos
+POST {{apiUrl}}/orders/{{orderId}}/proof
+Authorization: {{driverToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="proof_photos"; filename="proof1.jpg"
+Content-Type: image/jpeg
+
+< ./uploads/proofs/proof1.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="proof_photos"; filename="proof2.jpg"
+Content-Type: image/jpeg
+
+< ./uploads/proofs/proof2.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+# All {{750}} - {{494}}

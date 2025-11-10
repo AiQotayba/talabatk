@@ -1,0 +1,187 @@
+// datasource & generator
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ===== ENUMS =====
+enum UserRole {
+  client
+  driver
+  admin
+}
+
+enum OrderStatus {
+  pending
+  assigned
+  accepted
+  picked_up
+  in_transit
+  delivered
+  cancelled
+  failed
+}
+
+enum DriverStatus {
+  offline
+  available
+  busy
+  unavailable
+}
+
+// ===== MODELS =====
+model User {
+  id              String     @id @default(uuid())
+  role            UserRole
+  name            String?
+  email           String?    @unique
+  phone           String?    @unique
+  phone_verified  Boolean    @default(false)
+  otp_enabled     Boolean    @default(false)
+  hashed_password String?
+  OTP_token       String?
+  OTP_expires_at  DateTime?
+  fcm_token       String?
+  metadata        Json       @default("{}")
+  profile_photo_url String?
+  created_at      DateTime   @default(now())
+  updated_at      DateTime   @default(now())
+
+  addresses   Address[]
+  orders      Order[]       @relation("ClientOrders")
+  deliveries  Order[]       @relation("DriverOrders")
+  messagesFrom Message[]    @relation("MessagesFrom")
+  messagesTo   Message[]    @relation("MessagesTo")
+  ratingsGiven Rating[]     @relation("ClientRatings")
+  ratingsReceived Rating[]  @relation("DriverRatings")
+  complaints   Complaint[]
+  feedbacks    Feedback[]
+  statusLogs   DriverStatusLog[]
+}
+
+model Address {
+  id          String   @id @default(uuid())
+  user_id     String
+  city        String?
+  street      String?
+  label       String?
+  postal_code String?
+  lat         Float?
+  lng         Float?
+  is_default  Boolean  @default(false)
+  notes       String?
+  created_at  DateTime @default(now())
+  deleted_at  DateTime?
+
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  orders  Order[]
+}
+
+model Order {
+  id                String      @id @default(uuid())
+  client_id         String?
+  driver_id         String?
+  status            OrderStatus @default(pending)
+  currency          String      @default("USD")
+  price_cents       BigInt      @default(0)
+  dropoff_address_id String?
+  actual_pickup_at  DateTime?
+  delivered_at      DateTime?
+  cancelled_at      DateTime?
+  cancel_reason     String?
+  payment_method    String?     @default("cash")
+  payment_status    String?     @default("pending")
+  content           String?
+  proof_urls        String[]
+  public_post       String?
+  created_at        DateTime    @default(now())
+  updated_at        DateTime    @default(now())
+
+  client   User?    @relation("ClientOrders", fields: [client_id], references: [id])
+  driver   User?    @relation("DriverOrders", fields: [driver_id], references: [id])
+  address  Address? @relation(fields: [dropoff_address_id], references: [id])
+  messages Message[]
+  ratings  Rating[]
+  complaints Complaint[]
+}
+
+model Notification {
+  id                     Int      @id @default(autoincrement())
+  user_id                Int
+  title                  String
+  message                String
+  notificationalble_id   Int?
+  notificationalble_type String?
+  read_at                DateTime?
+  metadata               Json?
+  created_at             DateTime @default(now())
+  updated_at             DateTime @updatedAt
+}
+
+model Message {
+  id           String   @id @default(uuid())
+  order_id     String?
+  from_user    String
+  to_user      String?
+  content      String?
+  attachments  String[]
+  message_type String   @default("text")
+  is_read      Boolean  @default(false)
+  is_audio     Boolean  @default(false)
+  created_at   DateTime @default(now())
+
+  order   Order? @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  from    User   @relation("MessagesFrom", fields: [from_user], references: [id])
+  to      User?  @relation("MessagesTo", fields: [to_user], references: [id])
+}
+
+model DriverStatusLog {
+  id         String       @id @default(uuid())
+  driver_id  String
+  status     DriverStatus
+  started_at DateTime     @default(now())
+  ended_at   DateTime?
+  created_at DateTime     @default(now())
+
+  driver User @relation(fields: [driver_id], references: [id], onDelete: Cascade)
+}
+
+model Rating {
+  id        String   @id @default(uuid())
+  order_id  String
+  client_id String
+  driver_id String?
+  score     Int
+  comment   String?
+  created_at DateTime @default(now())
+
+  order  Order @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  client User  @relation("ClientRatings", fields: [client_id], references: [id], onDelete: Cascade)
+  driver User? @relation("DriverRatings", fields: [driver_id], references: [id])
+}
+
+model Complaint {
+  id          String   @id @default(uuid())
+  order_id    String
+  client_id   String
+  description String?
+  photo_urls  String[]
+  status      String   @default("pending")
+  created_at  DateTime @default(now())
+
+  order  Order @relation(fields: [order_id], references: [id])
+  client User  @relation(fields: [client_id], references: [id])
+}
+
+model Feedback {
+  id         String   @id @default(uuid())
+  driver_id  String
+  content    String?
+  created_at DateTime @default(now())
+
+  driver User @relation(fields: [driver_id], references: [id])
+}

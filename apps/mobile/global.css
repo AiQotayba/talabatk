@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* RTL Support - Default direction for the app */
+html, body {
+  direction: rtl;
+}
+
+

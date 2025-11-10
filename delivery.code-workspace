@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "apps/api"
+		},
+		{
+			"path": "apps/mobile"
+		}
+	],
+	"settings": {
+		"hide-files.files": []
+	}
+}
