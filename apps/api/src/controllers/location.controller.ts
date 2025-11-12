@@ -3,7 +3,7 @@ import { sendSuccess, sendError } from '../utils/response.util';
 import { AuthenticatedRequest } from '../types/common.types';
 import { NearbyDriversQuery, OrderTrackingResponse } from '../types/order.types';
 import prisma from '../config/database';
-import { DriverStatus } from '@prisma/client';
+import { DriverStatus, UserRole } from '@prisma/client';
 import { calculateDistance, isValidCoordinates } from '../utils/validation.util';
 import { Server } from 'socket.io';
 import { Prisma } from '@prisma/client';
@@ -99,11 +99,11 @@ export const trackOrder = async (req: AuthenticatedRequest, res: Response): Prom
     }
 
     // Check permissions
-    if (userRole === 'client' && order.client_id !== userId) {
+    if (userRole === UserRole.client && order.client_id !== userId) {
       sendError(res, 'Access denied', 403);
       return;
     }
-    if (userRole === 'driver' && order.driver_id !== userId) {
+    if (userRole === UserRole.driver && order.driver_id !== userId) {
       sendError(res, 'Access denied', 403);
       return;
     }
@@ -111,11 +111,14 @@ export const trackOrder = async (req: AuthenticatedRequest, res: Response): Prom
     const trackingResponse: OrderTrackingResponse = {
       order: {
         id: order.id,
+        code_order: order.code_order || '',
         status: order.status,
         content: order.content || '',
         created_at: order.created_at,
         actual_pickup_at: order.actual_pickup_at,
         delivered_at: order.delivered_at,
+        pickup_lat: order.pickup_lat,
+        pickup_lng: order.pickup_lng,
       },
       client: {
         id: order.client?.id || '',

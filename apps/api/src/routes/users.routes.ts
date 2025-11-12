@@ -6,7 +6,8 @@ import {
     getAddresses,
     createAddress,
     updateAddress,
-    deleteAddress
+    deleteAddress,
+    getAddress
 } from '../controllers/users.controller';
 import { authenticateToken } from '../middleware/auth.middleware';
 import { validate, validateParams } from '../middleware/validation.middleware';
@@ -56,6 +57,7 @@ router.post('/profile-photo', uploadMiddleware, uploadProfilePhoto as any);
 // Address routes
 router.get('/addresses', getAddresses as any);
 router.post('/addresses', validate(createAddressSchema), createAddress as any);
+router.get('/addresses/:id', validateParams(addressIdSchema), getAddress as any);
 router.put('/addresses/:id', validateParams(addressIdSchema), validate(updateAddressSchema), updateAddress as any);
 router.delete('/addresses/:id', validateParams(addressIdSchema), deleteAddress as any);
 

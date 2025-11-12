@@ -8,32 +8,41 @@
 @driverToken = Bearer YOUR_DRIVER_TOKEN_HERE
 @adminToken = Bearer YOUR_ADMIN_TOKEN_HERE
 
-# client
-# @email = ktsyr1@gmail.com
-# driver
-@email = driver@app.com
-# admin
-# @email = admin@app.com
-
 POST {{apiUrl}}/auth/login
 Content-Type: application/json
 {
-  "email": "{{email}}",
+  "email": "ktsyr1@gmail.com",
+  "password": "password123"
+}
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+{
+  "email": "driver@app.com",
+  "password": "password123"
+}
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+{
+  "email": "admin@app.com",
   "password": "password123"
 }
 
-### ============================================
+## ============================================
 ### 5. Order Management Endpoints 
 
 @apiUrl = http://localhost:4000/api
 # @clientToken
-@driverToken = Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5NGY1OWQ5OC1kYjIyLTQ4YzItOTVlYS03OTEyMmNlNjQzMTMiLCJyb2xlIjoiZHJpdmVyIiwiaWF0IjoxNzYyODE0Nzg5LCJleHAiOjE3NjI4MTgzODl9.E-ZubWEDAin6FzSedpU8ChwtJWGBHPVOwlDa0jeR3bw
+@driverToken = Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiMmE5ZGI3Ny0xOWQ2LTQxNmQtYTI1OC01NGJhYWI0NDZjMTIiLCJyb2xlIjoiY2xpZW50IiwiaWF0IjoxNzYyODgwNTEyLCJleHAiOjE3NjI4ODQxMTJ9.iSJmhADp7uOwZ5BzDE_iWxvgPK2RsMsuK-aeET4vUuY
 @addressId=355c3013-b510-4827-9194-2fe3ad73c0a1
 @orderId=d2634bec-9997-4a70-b33d-78a86cc0d4b3
 
 # GET {{apiUrl}}/orders/driver/pending
 # Authorization: {{driverToken}}
 # Content-Type: application/json
+
+GET {{apiUrl}}/orders 
+Authorization: {{driverToken}}
+Content-Type: application/json
 
 POST {{apiUrl}}/orders/{{orderId}}/accept
 Authorization: {{driverToken}}
@@ -49,34 +58,15 @@ Content-Type: application/json
 ### 6. Location & Tracking Endpoints
 ### ============================================
 
-### Update Driver Location
-PUT {{apiUrl}}/location/driver
-Authorization: {{driverToken}}
-Content-Type: application/json
+@apiUrl = http://localhost:4000/api
+@clientToken = Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiMmE5ZGI3Ny0xOWQ2LTQxNmQtYTI1OC01NGJhYWI0NDZjMTIiLCJyb2xlIjoiY2xpZW50IiwiaWF0IjoxNzYyODY3NDAxLCJleHAiOjE3NjI4NzEwMDF9.RVlPfX23BKuHcePtG5n081L29jS11PNDSPWQcHvhAgI
+@driverToken = Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5NGY1OWQ5OC1kYjIyLTQ4YzItOTVlYS03OTEyMmNlNjQzMTMiLCJyb2xlIjoiZHJpdmVyIiwiaWF0IjoxNzYyODY3MTY5LCJleHAiOjE3NjI4NzA3Njl9.JK0-0xGt8kxi5rYPQ_RiVvCI5QoMmfoEIKVvERYzZ7M
+@adminToken = Bearer YOUR_ADMIN_TOKEN_HERE
+@orderId=d2634bec-9997-4a70-b33d-78a86cc0d4b3
+# GET {{apiUrl}}/location/order/{{orderId}}
+# Authorization: {{clientToken}}
+# Content-Type: application/json
 
-{
-  "lat": 30.0444,
-  "lng": 31.2357,
-  "status": "available"
-}
-
-### Track Order Location
-GET {{apiUrl}}/location/order/{{orderId}}
-Authorization: {{clientToken}}
-Content-Type: application/json
-
-### Get Nearby Drivers
-GET {{apiUrl}}/location/nearby-drivers?lat=30.0444&lng=31.2357&radius=10
-Authorization: {{clientToken}}
-Content-Type: application/json
-
-###
-### ============================================
-### 7. Messaging Endpoints
-### ============================================
-
-### Send Message to Order
-# @name sendOrderMessage
 POST {{apiUrl}}/messages
 Authorization: {{clientToken}}
 Content-Type: application/json
@@ -406,54 +396,12 @@ Content-Type: application/json
 ### 12. Pagination Examples
 ### ============================================
 
-### Paginated Order History (Page 1)
-GET {{apiUrl}}/orders/client/history?page=1&limit=10
-Authorization: {{clientToken}}
-
-### Paginated Order History (Page 2)
-GET {{apiUrl}}/orders/client/history?page=2&limit=10
-Authorization: {{clientToken}}
-
-### Filtered Order History by Status
-GET {{apiUrl}}/orders/client/history?status=delivered&page=1&limit=10
-Authorization: {{clientToken}}
-
-### Paginated Admin Orders
+@apiUrl = http://localhost:4000/api
+@clientToken = Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiMmE5ZGI3Ny0xOWQ2LTQxNmQtYTI1OC01NGJhYWI0NDZjMTIiLCJyb2xlIjoiY2xpZW50IiwiaWF0IjoxNzYyODc5OTE0LCJleHAiOjE3NjI4ODM1MTR9.-gXE6MLw7bbmhAcI1jE4xChN85W2v_bdMarHC2o9gjc
+@driverToken = Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5NGY1OWQ5OC1kYjIyLTQ4YzItOTVlYS03OTEyMmNlNjQzMTMiLCJyb2xlIjoiZHJpdmVyIiwiaWF0IjoxNzYyODY3MTY5LCJleHAiOjE3NjI4NzA3Njl9.JK0-0xGt8kxi5rYPQ_RiVvCI5QoMmfoEIKVvERYzZ7M
+@adminToken = Bearer YOUR_ADMIN_TOKEN_HERE
+@orderId=d2634bec-9997-4a70-b33d-78a86cc0d4b3    
 GET {{apiUrl}}/admin/orders?page=1&limit=50
 Authorization: {{adminToken}}
-
-###
-### ============================================
-### 13. File Upload Examples
-### ============================================
-
-### Upload Profile Photo
-POST {{apiUrl}}/users/profile-photo
-Authorization: {{clientToken}}
-Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
-
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="profile_photo"; filename="avatar.jpg"
-Content-Type: image/jpeg
-
-< ./uploads/profiles/avatar.jpg
-------WebKitFormBoundary7MA4YWxkTrZu0gW--
-
-### Upload Multiple Proof Photos
-POST {{apiUrl}}/orders/{{orderId}}/proof
-Authorization: {{driverToken}}
-Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
-
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="proof_photos"; filename="proof1.jpg"
-Content-Type: image/jpeg
-
-< ./uploads/proofs/proof1.jpg
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="proof_photos"; filename="proof2.jpg"
-Content-Type: image/jpeg
-
-< ./uploads/proofs/proof2.jpg
-------WebKitFormBoundary7MA4YWxkTrZu0gW--
 
 # All {{750}} - {{494}}

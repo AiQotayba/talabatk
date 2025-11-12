@@ -35,7 +35,7 @@ export const register = async (req: AuthenticatedRequest, res: Response): Promis
         email,
         phone,
         hashed_password: hashedPassword,
-        role: "admin"
+        role: "client"
       },
       select: {
         id: true,

@@ -113,7 +113,7 @@ export default function AddressesScreen() {
                     >
                       <Ionicons name="pencil" size={18} color="#6b7280" />
                     </TouchableOpacity>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       onPress={() => handleDelete(address.id)}
                       activeOpacity={0.7}
                       className="bg-error-100 rounded-lg p-2"

@@ -10,6 +10,16 @@ export interface Message {
   is_read: boolean;
   attachments?: string[];
   created_at: string;
+  from?: {
+    id: string;
+    name: string;
+    profile_photo_url?: string;
+  };
+  to?: {
+    id: string;
+    name: string;
+    profile_photo_url?: string;
+  };
   from_user_data?: {
     id: string;
     name: string;

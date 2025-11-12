@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,6 +12,7 @@ import { addOrder } from '@/store/slices/orders.slice';
 import { useAppDispatch } from '@/store/hooks';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import Header from '@/components/ui/header';
 
 const createOrderSchema = z.object({
   content: z.string().min(10, 'وصف الطلب يجب أن يكون على الأقل 10 أحرف'),
@@ -25,6 +26,7 @@ export default function CreateOrderScreen() {
   const dispatch = useAppDispatch();
   const queryClient = useQueryClient();
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
+  const [isSelectOpen, setIsSelectOpen] = useState(false);
 
   // Fetch addresses
   const { data: addresses, isLoading: addressesLoading } = useQuery({
@@ -72,9 +74,7 @@ export default function CreateOrderScreen() {
 
   return (
     <ScrollView className="flex-1 my-10 bg-gray-50" showsVerticalScrollIndicator={false} style={{ direction: 'rtl' }}>
-      <View className="bg-white px-6 py-4 border-b border-gray-200">
-        <Text className="text-2xl font-bold text-gray-900 text-start">إنشاء طلب جديد</Text>
-      </View>
+      <Header title="إنشاء طلب جديد" />
 
       <View className="px-6 py-4">
         {/* Order Description */}
@@ -86,7 +86,7 @@ export default function CreateOrderScreen() {
               name="content"
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
-                  className="border border-gray-300 rounded-xl px-4 py-4 text-base bg-white"
+                  className="border border-gray-300 rounded-xl px-4 py-4 text-base bg-white min-h-24"
                   placeholder="اكتب ما تريد طلبه..."
                   placeholderTextColor="#9ca3af"
                   value={value}
@@ -115,63 +115,124 @@ export default function CreateOrderScreen() {
                 <Text className="text-gray-500 mt-4">جاري تحميل العناوين...</Text>
               </View>
             ) : addresses && addresses.length > 0 ? (
-              <View className="gap-3">
-                {addresses.map((address) => (
-                  <TouchableOpacity
-                    key={address.id}
-                    className={`border-2 rounded-xl p-4 mb-2 ${selectedAddressId === address.id
-                      ? 'border-primary-600 bg-primary-50'
-                      : 'border-gray-200 bg-white'
-                      }`}
-                    onPress={() => {
-                      setSelectedAddressId(address.id);
-                      setValue('dropoff_address_id', address.id);
-                    }}
-                    activeOpacity={0.7}
-                    style={{ flexDirection: 'row' }}
-                  >
-                    <View className="flex-row items-start flex-1" style={{ flexDirection: 'row' }}>
-                      <View className={`rounded-full p-2 mr-3 ${selectedAddressId === address.id ? 'bg-primary-600' : 'bg-gray-100'}`}>
-                        <Ionicons
-                          name="location"
-                          size={20}
-                          color={selectedAddressId === address.id ? '#ffffff' : '#6b7280'}
-                        />
-                      </View>
-                      <View className="flex-1">
-                        <View className="flex-row items-center gap-2 mb-1" style={{ flexDirection: 'row' }}>
-                          <Text className="font-bold text-gray-900 text-base">
-                            {address.label || 'عنوان'}
-                          </Text>
-                          {address.is_default && (
-                            <View className="bg-primary-100 px-2 py-0.5 rounded">
-                              <Text className="text-primary-700 text-xs font-bold">افتراضي</Text>
-                            </View>
-                          )}
-                        </View>
-                        <Text className="text-gray-700 text-sm text-start">
-                          {address.street}, {address.city}
-                        </Text>
-                      </View>
-                    </View>
-                    {selectedAddressId === address.id && (
-                      <Ionicons name="checkmark-circle" size={24} color="#E02020" />
-                    )}
-                  </TouchableOpacity>
-                ))}
+              <>
                 <TouchableOpacity
-                  className="border-2 border-dashed border-primary-600 rounded-xl p-4 mt-2"
-                  onPress={() => router.push('/(client)/addresses/add')}
+                  className="border-2 border-gray-300 rounded-xl p-4 bg-white"
+                  onPress={() => setIsSelectOpen(true)}
                   activeOpacity={0.7}
+                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
                 >
-                  <View className="flex-row items-center justify-center gap-2" style={{ flexDirection: 'row' }}>
-                    <Ionicons name="add-circle" size={20} color="#E02020" />
-                    <Text className="text-primary-600 text-center font-semibold text-base">
-                      إضافة عنوان جديد
-                    </Text>
+                  <View className="flex-1" style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="location" size={20} color="#E02020" style={{ marginRight: 12 }} />
+                    <View className="flex-1">
+                      {selectedAddressId ? (
+                        <>
+                          <Text className="font-semibold text-gray-900 text-base">
+                            {addresses.find(a => a.id === selectedAddressId)?.label || 'عنوان'}
+                          </Text>
+                          <Text className="text-gray-600 text-sm mt-1">
+                            {addresses.find(a => a.id === selectedAddressId)?.street}, {addresses.find(a => a.id === selectedAddressId)?.city}
+                          </Text>
+                        </>
+                      ) : (
+                        <Text className="text-gray-400 text-base">اختر عنوان التوصيل</Text>
+                      )}
+                    </View>
                   </View>
+                  <Ionicons name="chevron-down" size={20} color="#6b7280" />
                 </TouchableOpacity>
-              </View>
+
+                {/* Select Modal */}
+                <Modal
+                  visible={isSelectOpen}
+                  transparent
+                  animationType="slide"
+                  onRequestClose={() => setIsSelectOpen(false)}
+                >
+                  <TouchableOpacity
+                    className="flex-1 bg-black/50"
+                    activeOpacity={1}
+                    onPress={() => setIsSelectOpen(false)}
+                  >
+                    <View className="flex-1 justify-end">
+                      <View className="bg-white rounded-t-3xl p-6 max-h-[80%]" style={{ direction: 'rtl' }}>
+                          <View className="flex-row items-center justify-between mb-4">
+                            <Text className="text-xl font-bold text-gray-900">اختر العنوان</Text>
+                            <TouchableOpacity onPress={() => setIsSelectOpen(false)}>
+                              <Ionicons name="close" size={24} color="#6b7280" />
+                            </TouchableOpacity>
+                          </View>
+
+                          <ScrollView showsVerticalScrollIndicator={false}>
+                            <View className="gap-3">
+                              {addresses.map((address) => (
+                                <TouchableOpacity
+                                  key={address.id}
+                                  className={`border-2 rounded-xl p-4 ${
+                                    selectedAddressId === address.id
+                                      ? 'border-primary-600 bg-primary-50'
+                                      : 'border-gray-200 bg-white'
+                                  }`}
+                                  onPress={() => {
+                                    setSelectedAddressId(address.id);
+                                    setValue('dropoff_address_id', address.id);
+                                    setIsSelectOpen(false);
+                                  }}
+                                  activeOpacity={0.7}
+                                  style={{ flexDirection: 'row', alignItems: 'center' }}
+                                >
+                                  <View className="flex-1" style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <View className={`rounded-full p-2 mr-3 ${selectedAddressId === address.id ? 'bg-primary-600' : 'bg-gray-100'}`}>
+                                      <Ionicons
+                                        name="location"
+                                        size={20}
+                                        color={selectedAddressId === address.id ? '#ffffff' : '#6b7280'}
+                                      />
+                                    </View>
+                                    <View className="flex-1">
+                                      <View className="flex-row items-center gap-2 mb-1" style={{ flexDirection: 'row' }}>
+                                        <Text className="font-bold text-gray-900 text-base">
+                                          {address.label || 'عنوان'}
+                                        </Text>
+                                        {address.is_default && (
+                                          <View className="bg-primary-100 px-2 py-0.5 rounded">
+                                            <Text className="text-primary-700 text-xs font-bold">افتراضي</Text>
+                                          </View>
+                                        )}
+                                      </View>
+                                      <Text className="text-gray-700 text-sm">
+                                        {address.street}, {address.city}
+                                      </Text>
+                                    </View>
+                                  </View>
+                                  {selectedAddressId === address.id && (
+                                    <Ionicons name="checkmark-circle" size={24} color="#E02020" />
+                                  )}
+                                </TouchableOpacity>
+                              ))}
+                            </View>
+                          </ScrollView>
+
+                          <TouchableOpacity
+                            className="border-2 border-dashed border-primary-600 rounded-xl p-4 mt-4"
+                            onPress={() => {
+                              setIsSelectOpen(false);
+                              router.push('/(client)/addresses/add');
+                            }}
+                            activeOpacity={0.7}
+                          >
+                            <View className="flex-row items-center justify-center gap-2" style={{ flexDirection: 'row' }}>
+                              <Ionicons name="add-circle" size={20} color="#E02020" />
+                              <Text className="text-primary-600 text-center font-semibold text-base">
+                                إضافة عنوان جديد
+                              </Text>
+                            </View>
+                          </TouchableOpacity>
+                        </View>
+                    </View>
+                  </TouchableOpacity>
+                </Modal>
+              </>
             ) : (
               <TouchableOpacity
                 className="border-2 border-dashed border-primary-600 rounded-xl p-4"

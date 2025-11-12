@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Header from '@/components/ui/header';
 
 interface FAQItem {
   question: string;
@@ -57,14 +58,7 @@ export default function FAQScreen() {
 
   return (
     <ScrollView className="flex-1 my-10 bg-gray-50" showsVerticalScrollIndicator={false} style={{ direction: 'rtl' }}>
-      <View className="bg-white px-6 py-4 border-b border-gray-200">
-        <Text className="text-3xl font-bold text-gray-900 text-start" style={{ fontFamily: 'System' }}>
-          الأسئلة الشائعة
-        </Text>
-        <Text className="text-gray-600 mt-2 text-start" style={{ fontFamily: 'System' }}>
-          كل الأسئلة اللي ممكن تسألها
-        </Text>
-      </View>
+      <Header title="الأسئلة الشائعة" description="كل الأسئلة اللي ممكن تسألها" />
 
       <View className="px-6 py-4">
         {faqs.map((faq, index) => (

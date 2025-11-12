@@ -6,18 +6,9 @@ import { apiClient } from '@/services/api/apiClient';
 import { Order } from '@/types/order.types';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import OrderCard from '@/components/order/order-card';
+import Header from '@/components/ui/header';
 
-const getStatusText = (status: string) => {
-  const statusMap: Record<string, string> = {
-    pending: 'قيد الانتظار',
-    assigned: 'تم التعيين',
-    in_progress: 'قيد التنفيذ',
-    delivered: 'تم التسليم',
-    cancelled: 'ملغي',
-    failed: 'فشل',
-  };
-  return statusMap[status] || status;
-};
 
 export default function ClientHomeScreen() {
   const router = useRouter();
@@ -38,16 +29,7 @@ export default function ClientHomeScreen() {
       showsVerticalScrollIndicator={false}
       style={{ direction: 'rtl' }}
     >
-      <View className="bg-white px-6 py-8" style={{ direction: 'rtl' }}>
-        <Animated.View entering={FadeInDown.duration(600)}>
-          <Text className="text-3xl font-bold text-gray-900 text-start mb-2">
-            أهلاً بك، {user?.name}
-          </Text>
-          <Text className="text-gray-600 text-base text-start">
-            شو بدك تطلب اليوم؟
-          </Text>
-        </Animated.View>
-      </View>
+      <Header title={`أهلاً بك، ${user?.name}`} description="شو بدك تطلب اليوم؟" />
 
       <View className="px-6 mt-4" style={{ direction: 'rtl' }}>
         <Animated.View entering={FadeInDown.duration(600).delay(100)}>
@@ -63,7 +45,7 @@ export default function ClientHomeScreen() {
               elevation: 6,
             }}
           >
-            <View className="flex-row items-center justify-center gap-3" style={{ flexDirection: 'row-reverse' }}>
+            <View className="flex-row items-center justify-center gap-3" >
               <Ionicons name="add-circle" size={24} color="#ffffff" />
               <Text className="text-white text-center font-bold text-lg">
                 إنشاء طلب جديد
@@ -81,54 +63,7 @@ export default function ClientHomeScreen() {
             </View>
           ) : ordersData && ordersData.length > 0 ? (
             ordersData.map((order, index) => (
-              <Animated.View
-                key={order.id}
-                entering={FadeInDown.duration(400).delay(index * 100)}
-              >
-                <TouchableOpacity
-                  className="bg-white rounded-xl p-4 mb-3 shadow-sm border border-gray-100"
-                  onPress={() => router.push(`/(client)/orders/${order.id}`)}
-                  activeOpacity={0.7}
-                >
-                  <View className="flex-row justify-between items-start" style={{ flexDirection: 'row-reverse' }}>
-                    <View className="flex-1">
-                      <View className="flex-row items-center gap-2 mb-2" style={{ flexDirection: 'row-reverse' }}>
-                        <Ionicons name="receipt-outline" size={20} color="#E02020" />
-                        <Text className="font-bold text-gray-900 text-base">
-                          طلب #{order.id.slice(0, 8)}
-                        </Text>
-                      </View>
-                      <Text className="text-gray-700 text-sm mb-3 text-start leading-5" numberOfLines={2}>
-                        {order.content}
-                      </Text>
-                      <View className="flex-row items-center gap-2" style={{ flexDirection: 'row-reverse' }}>
-                        <View
-                          className={`px-3 py-1.5 rounded-lg ${
-                            order.status === 'delivered'
-                              ? 'bg-success-100'
-                              : order.status === 'cancelled'
-                              ? 'bg-error-100'
-                              : 'bg-warning-100'
-                          }`}
-                        >
-                          <Text
-                            className={`text-xs font-semibold ${
-                              order.status === 'delivered'
-                                ? 'text-success-700'
-                                : order.status === 'cancelled'
-                                ? 'text-error-700'
-                                : 'text-warning-700'
-                            }`}
-                          >
-                            {getStatusText(order.status)}
-                          </Text>
-                        </View>
-                        <Ionicons name="chevron-back" size={16} color="#9ca3af" />
-                      </View>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              </Animated.View>
+              <OrderCard key={order.id} order={order} index={index} />
             ))
           ) : (
             <Animated.View entering={FadeInDown.duration(600)} className="py-12 items-center">
@@ -144,9 +79,9 @@ export default function ClientHomeScreen() {
             </Animated.View>
           )}
         </View>
-        
+
       </View>
-    </ScrollView>
+    </ScrollView >
   );
 }
 

@@ -5,6 +5,8 @@ import { apiClient } from '@/services/api/apiClient';
 import { Order } from '@/types/order.types';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import OrderCard from '@/components/order/order-card';
+import Header from '@/components/ui/header';
 
 const getStatusText = (status: string) => {
   const statusMap: Record<string, string> = {
@@ -45,10 +47,8 @@ export default function ClientOrdersScreen() {
   });
 
   return (
-    <View className="flex-1 bg-gray-50">
-      <View className="bg-white px-6 py-4 border-b border-gray-200" style={{ direction: 'rtl' }}>
-        <Text className="text-2xl font-bold text-gray-900 text-right">طلباتي</Text>
-      </View>
+    <View className="flex-1 bg-gray-50 py-6">
+      <Header title="طلباتي" description="جميع طلباتك السابقة" />
 
       <ScrollView
         className="flex-1"
@@ -64,39 +64,7 @@ export default function ClientOrdersScreen() {
             </View>
           ) : ordersData && ordersData.length > 0 ? (
             ordersData.map((order, index) => (
-              <Animated.View
-                key={order.id}
-                entering={FadeInDown.duration(400).delay(index * 50)}
-              >
-                <TouchableOpacity
-                  className="bg-white rounded-xl p-4 mb-3 shadow-sm border border-gray-100"
-                  onPress={() => router.push(`/(client)/orders/${order.id}`)}
-                  activeOpacity={0.7}
-                >
-                  <View className="flex-row justify-between items-start mb-2" style={{ flexDirection: 'row-reverse' }}>
-                    <View className="flex-1">
-                      <View className="flex-row items-center gap-2 mb-2" style={{ flexDirection: 'row-reverse' }}>
-                        <Ionicons name="receipt-outline" size={20} color="#E02020" />
-                        <Text className="font-bold text-gray-900 text-base">
-                          طلب #{order.id.slice(0, 8)}
-                        </Text>
-                      </View>
-                      <Text className="text-gray-700 text-sm mb-2 text-right" numberOfLines={2}>
-                        {order.content}
-                      </Text>
-                      <View className="flex-row items-center gap-2" style={{ flexDirection: 'row-reverse' }}>
-                        <Ionicons name="time-outline" size={14} color="#9ca3af" />
-                        <Text className="text-gray-500 text-xs">
-                          {new Date(order.created_at).toLocaleDateString('ar-SA')}
-                        </Text>
-                      </View>
-                    </View>
-                    <View className={`px-3 py-1.5 rounded-lg ${getStatusColor(order.status)}`}>
-                      <Text className="text-xs font-semibold">{getStatusText(order.status)}</Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              </Animated.View>
+              <OrderCard key={order.id} order={order} index={index} />
             ))
           ) : (
             <Animated.View entering={FadeInDown.duration(600)} className="py-12 items-center">

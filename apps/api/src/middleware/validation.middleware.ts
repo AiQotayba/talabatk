@@ -4,7 +4,13 @@ import { sendError } from '../utils/response.util';
 
 export const validate = (schema: Joi.ObjectSchema) => {
   return (req: Request, res: Response, next: NextFunction): void => {
-    const { error } = schema.validate(req.body);
+    // Trim string values in body to handle whitespace issues
+    const trimmedBody = Object.keys(req.body).reduce((acc, key) => {
+      acc[key] = typeof req.body[key] === 'string' ? req.body[key].trim() : req.body[key];
+      return acc;
+    }, {} as Record<string, any>);
+    
+    const { error, value } = schema.validate(trimmedBody);
     
     if (error) {
       const errorMessage = error.details.map(detail => detail.message).join(', ');
@@ -12,19 +18,32 @@ export const validate = (schema: Joi.ObjectSchema) => {
       return;
     }
     
+    // Update req.body with validated and trimmed values
+    Object.assign(req.body, value);
+    
     next();
   };
 };
 
 export const validateQuery = (schema: Joi.ObjectSchema) => {
   return (req: Request, res: Response, next: NextFunction): void => {
-    const { error } = schema.validate(req.query);
+    // Trim string values in query to handle whitespace issues
+    const trimmedQuery = Object.keys(req.query).reduce((acc, key) => {
+      const value = req.query[key];
+      acc[key] = typeof value === 'string' ? value.trim() : value;
+      return acc;
+    }, {} as Record<string, any>);
+    
+    const { error, value } = schema.validate(trimmedQuery);
     
     if (error) {
       const errorMessage = error.details.map(detail => detail.message).join(', ');
       sendError(res, `Query validation error: ${errorMessage}`, 400);
       return;
     }
+    
+    // Update req.query with validated and trimmed values
+    Object.assign(req.query, value);
     
     next();
   };

@@ -4,7 +4,11 @@ import {
   getAllDrivers,
   updateDriver,
   getAnalytics,
-  getComplaints
+  getComplaints,
+  getDashboardStats,
+  getAllUsers,
+  getUserById,
+  getMap
 } from '../controllers/admin.controller';
 import { authenticateToken, requireAdmin } from '../middleware/auth.middleware';
 import { validate, validateParams, validateQuery } from '../middleware/validation.middleware';
@@ -24,6 +28,10 @@ const updateDriverSchema = Joi.object({
 });
 
 const driverIdSchema = Joi.object({
+  id: Joi.string().uuid().required(),
+});
+
+const userIdSchema = Joi.object({
   id: Joi.string().uuid().required(),
 });
 
@@ -53,11 +61,19 @@ const complaintsQuerySchema = Joi.object({
   status: Joi.string().valid('pending', 'resolved', 'dismissed').optional(),
 });
 
+const mapQuerySchema = Joi.object({
+  status: Joi.string().valid('all', 'pending', 'assigned', 'in_progress', 'delivered', 'cancelled').optional(),
+});
+
 // Admin routes
+router.get('/dashboard/stats', getDashboardStats as any);
 router.get('/orders', validateQuery(ordersQuerySchema), getAllOrders as any);
+router.get('/users', getAllUsers as any);
+router.get('/users/:id', validateParams(userIdSchema), getUserById as any);
 router.get('/drivers', validateQuery(driversQuerySchema), getAllDrivers as any);
 router.put('/drivers/:id', validateParams(driverIdSchema), validate(updateDriverSchema), updateDriver as any);
 router.get('/analytics', validateQuery(analyticsQuerySchema), getAnalytics as any);
 router.get('/complaints', validateQuery(complaintsQuerySchema), getComplaints as any);
+router.get('/map', validateQuery(mapQuerySchema), getMap as any);
 
 export default router;

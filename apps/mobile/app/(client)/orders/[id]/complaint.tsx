@@ -68,7 +68,7 @@ export default function ComplaintScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-white" showsVerticalScrollIndicator={false} style={{ direction: 'rtl' }}>
+    <ScrollView className="flex-1 bg-white py-6" showsVerticalScrollIndicator={false} style={{ direction: 'rtl' }}>
       <View className="px-6 py-8">
         <Animated.View entering={FadeInDown.duration(600)}>
           <View className="items-center mb-8">
@@ -84,7 +84,7 @@ export default function ComplaintScreen() {
 
         <Animated.View entering={FadeInDown.duration(600).delay(100)}>
           <View className="mb-6">
-            <Text className="text-sm font-semibold text-gray-900 mb-2 text-right">الوصف *</Text>
+            <Text className="text-sm font-semibold text-gray-900 mb-2 text-start">الوصف *</Text>
             <TextInput
               className="border-2 border-gray-200 rounded-xl px-4 py-4 text-base bg-gray-50"
               placeholder="اكتب عن المشكلة..."
@@ -102,8 +102,8 @@ export default function ComplaintScreen() {
 
         <Animated.View entering={FadeInDown.duration(600).delay(200)}>
           <View className="mb-6">
-            <Text className="text-sm font-semibold text-gray-900 mb-3 text-right">صور (اختياري)</Text>
-            <View className="flex-row flex-wrap gap-3" style={{ flexDirection: 'row-reverse' }}>
+            <Text className="text-sm font-semibold text-gray-900 mb-3 text-start">صور (اختياري)</Text>
+            <View className="flex-row flex-wrap gap-3" >
               {photos.map((photo, index) => (
                 <Animated.View key={index} entering={FadeInDown.duration(300)} className="relative">
                   <Image source={{ uri: photo }} className="w-24 h-24 rounded-xl" />
@@ -126,7 +126,7 @@ export default function ComplaintScreen() {
                 </TouchableOpacity>
               )}
             </View>
-            <Text className="text-xs text-gray-500 mt-3 text-right">
+            <Text className="text-xs text-gray-500 mt-3 text-start">
               يمكنك إضافة حتى 5 صور
             </Text>
           </View>
@@ -150,11 +150,11 @@ export default function ComplaintScreen() {
             {submitComplaintMutation.isPending ? (
               <ActivityIndicator color="white" />
             ) : (
-              <View className="flex-row items-center justify-center gap-2" style={{ flexDirection: 'row-reverse' }}>
-                <Ionicons name="send" size={20} color="#ffffff" />
+              <View className="flex-row items-center justify-center gap-2" >
                 <Text className="text-white text-center font-bold text-base">
                   إرسال الشكوى
                 </Text>
+                <Ionicons name="send" size={20} color="#ffffff" style={{ transform: [{ rotate: '180deg' }] }} />
               </View>
             )}
           </TouchableOpacity>

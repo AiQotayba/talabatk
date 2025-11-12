@@ -11,6 +11,7 @@ import { updateProfile } from '@/store/slices/auth.slice';
 import { apiClient } from '@/services/api/apiClient';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import Header from '@/components/ui/header';
 
 const profileSchema = z.object({
   name: z.string().min(2, 'الاسم يجب أن يكون على الأقل حرفين'),
@@ -119,9 +120,7 @@ export default function EditProfileScreen() {
 
   return (
     <ScrollView className="flex-1 bg-gray-50" showsVerticalScrollIndicator={false} style={{ direction: 'rtl' }}>
-      <View className="bg-white px-6 py-4 border-b border-gray-200">
-        <Text className="text-2xl font-bold text-gray-900 text-start">تعديل الملف الشخصي</Text>
-      </View>
+      <Header title="تعديل الملف الشخصي" />
 
       <View className="px-6 py-8">
         <Animated.View entering={FadeInDown.duration(600)} className="items-center mb-8">

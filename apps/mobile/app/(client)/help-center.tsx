@@ -1,18 +1,12 @@
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
+import Header from '@/components/ui/header';
 
 export default function HelpCenterScreen() {
   return (
     <ScrollView className="flex-1 my-10 bg-gray-50" showsVerticalScrollIndicator={false} style={{ direction: 'rtl' }}>
-      <View className="bg-white px-6 py-4 border-b border-gray-200">
-        <Text className="text-3xl font-bold text-gray-900 text-start" style={{ fontFamily: 'System' }}>
-          مركز المساعدة
-        </Text>
-        <Text className="text-gray-600 mt-2 text-start" style={{ fontFamily: 'System' }}>
-          كل المساعدة اللي بدك إياها
-        </Text>
-      </View>
+      <Header title="مركز المساعدة" description="كل المساعدة اللي بدك إياها" />
 
       <View className="px-6 py-4">
         <Link href="/(client)/faq" asChild>

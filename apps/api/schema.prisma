@@ -70,8 +70,8 @@ model Address {
   street      String?
   label       String?
   postal_code String?
-  lat         Float?
-  lng         Float?
+  lat         Float?   // Optional in DB for backward compatibility, but required in validation
+  lng         Float?   // Optional in DB for backward compatibility, but required in validation
   is_default  Boolean  @default(false)
   notes       String?
   created_at  DateTime @default(now())
@@ -83,12 +83,15 @@ model Address {
 
 model Order {
   id                String      @id @default(uuid())
+  code_order        String?     @unique
   client_id         String?
   driver_id         String?
   status            OrderStatus @default(pending)
   currency          String      @default("USD")
   price_cents       BigInt      @default(0)
   dropoff_address_id String?
+  pickup_lat        Float?
+  pickup_lng        Float?
   actual_pickup_at  DateTime?
   delivered_at      DateTime?
   cancelled_at      DateTime?

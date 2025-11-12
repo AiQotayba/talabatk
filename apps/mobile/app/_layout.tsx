@@ -8,6 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 import { store } from '@/store/store';
 import { loadAuthState } from '@/store/slices/auth.slice';
 import { useAppDispatch } from '@/store/hooks';
+import { ToastProvider } from '@/contexts/ToastContext';
 
 // Enable RTL by default
 if (!I18nManager.isRTL) {
@@ -50,7 +51,9 @@ export default function RootLayout() {
   return (
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
-        <RootLayoutNav />
+        <ToastProvider>
+          <RootLayoutNav />
+        </ToastProvider>
       </QueryClientProvider>
     </Provider>
   );

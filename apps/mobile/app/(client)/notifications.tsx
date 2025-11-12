@@ -2,15 +2,14 @@ import { View, Text, ScrollView } from 'react-native';
 import { useAppSelector } from '@/store/hooks';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import Header from '@/components/ui/header';
 
 export default function NotificationsScreen() {
   const { notifications } = useAppSelector((state) => state.notifications);
 
   return (
     <View className="flex-1 my-10 bg-gray-50">
-      <View className="bg-white px-6 py-4 border-b border-gray-200" style={{ direction: 'rtl' }}>
-        <Text className="text-2xl font-bold text-gray-900 text-start">الإشعارات</Text>
-      </View>
+      <Header title="الإشعارات" description="جميع الإشعارات والتنبيهات" />
 
       <ScrollView className="flex-1 px-6 py-4" showsVerticalScrollIndicator={false} style={{ direction: 'rtl' }}>
         {notifications.length > 0 ? (

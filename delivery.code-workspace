@@ -8,6 +8,8 @@
 		}
 	],
 	"settings": {
-		"hide-files.files": []
+		"hide-files.files": [
+			"/d:/projects/DeliveryApp/apps/mobile/android"
+		]
 	}
 }

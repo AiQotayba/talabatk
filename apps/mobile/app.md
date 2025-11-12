@@ -690,9 +690,9 @@ UpdateApp (if needed)
 ### Maps Integration
 
 #### Map Providers
-- **Google Maps**: (اختياري - يتطلب API Key)
 - **OpenStreetMap**: مجاني (بديل Google Maps)
 - **MapBox**: (اختياري) للحلول المتقدمة
+- **Leaflet**: 
 
 #### Map Features
 - **User Location**: عرض موقع المستخدم الحالي

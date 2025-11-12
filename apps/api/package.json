@@ -9,6 +9,7 @@
     "start": "node dist/app.js",
     "migrate": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
+    "db": " npx prisma generate --schema=prisma/schema.prisma ; npx prisma db push",
     "generate": "prisma generate",
     "seed": "ts-node prisma/seed.ts",
     "setup": "node scripts/setup.js",

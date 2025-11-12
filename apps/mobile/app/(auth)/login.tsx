@@ -9,6 +9,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { login } from '@/store/slices/auth.slice';
 import { ROUTES } from '@/utils/constants';
+import { Button } from '@/components/ui/button';
 
 const loginSchema = z.object({
   email: z.string().email('البريد الإلكتروني غير صحيح'),
@@ -51,11 +52,18 @@ export default function LoginScreen() {
     }
   };
 
-  const handleDefaultData = () => {
-    setValue('email', 'ktsyr1@gmail.com');
-    setValue('password', 'password123');
-  };
-
+  const handleDefaultData = (role: string) => {
+    if (role === 'admin') {
+      setValue('email', 'ktsyr1@gmail.com');
+      setValue('password', 'password123');
+    } else if (role === 'driver') {
+      setValue('email', 'driver@app.com');
+      setValue('password', 'password123');
+    } else if (role === 'client') {
+      setValue('email', 'client@app.com');
+      setValue('password', 'password123');
+    };
+  }
   return (
     <View className="flex-1 bg-white px-6 justify-center gap-4 grid grid-cols-1" style={{ direction: 'rtl' }}>
       <Animated.View entering={FadeInDown.duration(600)} className="col-span-1">
@@ -131,6 +139,7 @@ export default function LoginScreen() {
           <Text className="text-red-500 text-sm mt-2 text-start">{errors.password.message}</Text>
         )}
       </View>
+
       <View className='w-full flex flex-row justify-end items-center'>
         <TouchableOpacity
           onPress={() => router.push('/(auth)/forgot-password')}
@@ -139,6 +148,7 @@ export default function LoginScreen() {
           <Text className="text-primary-600 text-right font-medium text-base w-max">نسيت كلمة المرور؟</Text>
         </TouchableOpacity>
       </View>
+
       <TouchableOpacity
         className="bg-primary-600 rounded-xl py-4 mb-5 col-span-1"
         onPress={handleSubmit(onSubmit)}
@@ -159,20 +169,20 @@ export default function LoginScreen() {
         )}
       </TouchableOpacity>
 
-
-      <View className="flex-row justify-center items-center gap-2 mt-4" style={{ flexDirection: 'row-reverse' }}>
+      <View className="flex-row justify-center items-center gap-2 " style={{ flexDirection: 'row-reverse' }}>
         <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
           <Text className="text-primary-600 font-bold text-base">إنشاء حساب</Text>
         </TouchableOpacity>
         <Text className="text-gray-600 text-base">ليس لديك حساب؟</Text>
       </View>
-      <View className='flex flex-row justify-center items-center gap-4  full'>
-        <TouchableOpacity onPress={() => router.push('/onboarding')}>
-          <Text className='bg-primary-100 text-primary-600 font-bold text-base text-center p-4 rounded-xl border border-primary-600'>الترحيب</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleDefaultData()}>
-          <Text className='bg-primary-100 text-primary-600 font-bold text-base text-center p-4 rounded-xl border border-primary-600'>بيانات افتراضية</Text>
-        </TouchableOpacity>
+
+      <View className='w-full flex flex-row justify-center items-center gap-4 bg-gray-200 rounded-xl h-0.5'></View>
+
+      <View className='flex flex-row flex-wrap justify-center items-center gap-4  *:w-[48%] w-full'>
+        <Button variant='outline' className='w-full' onPress={() => router.push('/onboarding')} disabled={false} loading={false}>الترحيب</Button>
+        <Button variant='outline' className='w-[30%]' onPress={() => handleDefaultData("client")} disabled={false} loading={false}>عميل</Button>
+        <Button variant='outline' className='w-[30%]' onPress={() => handleDefaultData("driver")} disabled={false} loading={false}>سائق</Button>
+        <Button variant='outline' className='w-[30%]' onPress={() => handleDefaultData("admin")} disabled={false} loading={false}>مدير</Button>
       </View>
     </View>
   );

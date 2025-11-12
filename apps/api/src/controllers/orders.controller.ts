@@ -19,7 +19,7 @@ const serializeOrders = (orders: any[]): any[] => {
 export const createOrder = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
-    const { content, dropoff_address_id, payment_method = 'cash' }: CreateOrderRequest = req.body;
+    const { content, dropoff_address_id, payment_method = 'cash', pickup_lat, pickup_lng }: CreateOrderRequest = req.body;
 
     // Verify address belongs to user
     const address = await prisma.address.findFirst({
@@ -35,6 +35,11 @@ export const createOrder = async (req: AuthenticatedRequest, res: Response): Pro
       return;
     }
 
+    // Generate order code based on total order count
+    const totalOrders = await prisma.order.count();
+    const orderNumber = totalOrders + 1;
+    const codeOrder = `ORD-${String(orderNumber).padStart(6, '0')}`;
+
     // Create order
     const order = await prisma.order.create({
       data: {
@@ -43,6 +48,11 @@ export const createOrder = async (req: AuthenticatedRequest, res: Response): Pro
         dropoff_address_id,
         payment_method,
         status: OrderStatus.pending,
+        code_order: codeOrder,
+        ...(pickup_lat !== undefined && pickup_lng !== undefined && {
+          pickup_lat,
+          pickup_lng,
+        }),
       },
       include: {
         client: {
@@ -68,12 +78,12 @@ export const createOrder = async (req: AuthenticatedRequest, res: Response): Pro
 };
 
 export const getAll = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  try { 
+  try {
     const userId = req.user!.id;
     const userRole = req.user!.role;
 
     const where: any = {};
-    
+
     // Filter by user role
     if (userRole === UserRole.client) {
       where.client_id = userId;
@@ -103,7 +113,7 @@ export const getAll = async (req: AuthenticatedRequest, res: Response): Promise<
       },
       orderBy: { created_at: 'desc' },
     });
-
+    
     sendSuccess(res, serializeOrders(orders), 'Orders retrieved successfully');
   } catch (error) {
     console.error('Get orders error:', error);
@@ -168,7 +178,7 @@ export const getOrder = async (req: AuthenticatedRequest, res: Response): Promis
 export const updateOrderStatus = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const orderId = req.params.id;
-    const { status }: UpdateOrderStatusRequest = req.body;
+    const { status, pickup_lat, pickup_lng }: UpdateOrderStatusRequest = req.body;
     const userId = req.user!.id;
     const userRole = req.user!.role;
 
@@ -202,7 +212,13 @@ export const updateOrderStatus = async (req: AuthenticatedRequest, res: Response
       where: { id: orderId },
       data: {
         status,
-        ...(status === OrderStatus.picked_up && { actual_pickup_at: new Date() }),
+        ...(status === OrderStatus.picked_up && {
+          actual_pickup_at: new Date(),
+          ...(pickup_lat !== undefined && pickup_lng !== undefined && {
+            pickup_lat,
+            pickup_lng,
+          }),
+        }),
         ...(status === OrderStatus.delivered && { delivered_at: new Date() }),
         ...(status === OrderStatus.cancelled && { cancelled_at: new Date() }),
         updated_at: new Date(),
@@ -504,5 +520,52 @@ export const uploadProof = async (req: AuthenticatedRequest, res: Response): Pro
   } catch (error) {
     console.error('Upload proof error:', error);
     sendError(res, 'Failed to upload proof photos', 500);
+  }
+};
+
+export const getDriverOrderHistory = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const driverId = req.user!.id;
+    const { page = 1, limit = 10, status }: OrderHistoryQuery = req.query;
+
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const where = {
+      driver_id: driverId,
+      ...(status && { status }),
+    };
+
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        include: {
+          client: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+              profile_photo_url: true,
+            }
+          },
+          address: true,
+        },
+        orderBy: { created_at: 'desc' },
+        skip,
+        take: Number(limit),
+      }),
+      prisma.order.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / Number(limit));
+
+    sendPaginatedSuccess(res, serializeOrders(orders), {
+      page: Number(page),
+      limit: Number(limit),
+      total,
+      totalPages,
+    }, 'Driver order history retrieved successfully');
+  } catch (error) {
+    console.error('Get driver order history error:', error);
+    sendError(res, 'Failed to retrieve driver order history', 500);
   }
 };

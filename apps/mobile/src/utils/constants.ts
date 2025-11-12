@@ -1,5 +1,5 @@
 export const API_BASE_URL = __DEV__
-  ? 'http://192.168.1.6:4000/api'
+  ? 'http://192.168.1.5:4000/api'
   : 'https://api.delivery-app.com/api';
 
 export const SOCKET_URL = __DEV__

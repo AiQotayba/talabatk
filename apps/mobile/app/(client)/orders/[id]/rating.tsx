@@ -54,8 +54,8 @@ export default function RatingScreen() {
 
         <Animated.View entering={FadeInDown.duration(600).delay(100)}>
           <View className="mb-8">
-            <Text className="text-base font-semibold text-gray-900 mb-6 text-center">التقييم</Text>
-            <View className="flex-row justify-center gap-3" style={{ flexDirection: 'row-reverse' }}>
+            {/* <Text className="text-base font-semibold text-gray-900 mb-6 text-center">التقييم</Text> */}
+            <View className="flex-row justify-center gap-3" >
               {[1, 2, 3, 4, 5].map((star) => (
                 <TouchableOpacity
                   key={star}
@@ -79,7 +79,7 @@ export default function RatingScreen() {
 
         <Animated.View entering={FadeInDown.duration(600).delay(200)}>
           <View className="mb-6">
-            <Text className="text-sm font-semibold text-gray-900 mb-2 text-right">تعليق (اختياري)</Text>
+            <Text className="text-sm font-semibold text-gray-900 mb-2 text-start">تعليق (اختياري)</Text>
             <TextInput
               className="border-2 border-gray-200 rounded-xl px-4 py-4 text-base bg-gray-50"
               placeholder="اكتب عن تجربتك..."
@@ -113,7 +113,7 @@ export default function RatingScreen() {
             {submitRatingMutation.isPending ? (
               <ActivityIndicator color="white" />
             ) : (
-              <View className="flex-row items-center justify-center gap-2" style={{ flexDirection: 'row-reverse' }}>
+              <View className="flex-row items-center justify-center gap-2" >
                 <Ionicons name="checkmark-circle" size={20} color="#ffffff" />
                 <Text className="text-white text-center font-bold text-base">
                   إرسال التقييم

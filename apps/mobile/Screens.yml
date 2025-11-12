@@ -1,0 +1,78 @@
+- UpdateApp
+- (auth):
+    - Signup ✔️
+    - Login ✔️
+    - Forgot Password
+    - Verify Email 
+- (Client):
+    - home
+        @Offers  # [listOffers, ToChat]
+        @LastOrders  # [listLastOrders, ToChat]
+        @CardOrder ✔️ # [ClientName, ClientAddress, ClientContext, created_at]
+    - notifications
+    - orders
+        @listOrders [reOrder & edit, viewOrder, chatOrder]
+            CardOrder:
+                - @reOrder
+                - @viewOrder
+                - @chatOrder
+        - [id]/Group
+            @Messages  # [message, image, audio]
+            @StatusOrder  # [pending, accepted, rejected, in_progress, delivered, cancelled]
+            @Address  # [create, select, live GPS]
+            @Complaints  # [message, image]
+            @Rating 
+            @ProofOfDelivery  # [QRScan, signature, confirmButton]
+    - policy✔️
+    - helpCenter ✔️ # [faq, contactSupport]
+    - profile: ✔️
+        @EditProfile
+        @ChangePassword
+        - addresses: ✔️
+            @listAddresses ✔️
+            @createAddress ✔️
+            @Logout ✔️
+- (Worker):
+    - home
+        @DriverStatus # [offline, available, busy, unavailable]
+        @LastOrders # [listLastThreeOrders, ToChat]
+            @FilterOrders # [filterByStatus, filterByDate, filterByClientName]
+            @CardOrder # [ClientName, ClientAddress, ClientContext, created_at]
+    - notifications
+    - profile
+        @EditProfile
+        @ChangePassword
+        @feedback # [message, image]
+        @Logout
+    - orders
+        @listOrders
+        - [id]/Group
+            @OrderDetails # [allOrderDetails, UserDetails]
+            @Messages # [message, image, audio]
+            @ClientMap # [live GPS, defaultAddress]
+            @StatusOrderUpdate # [pending, accepted, rejected, in_progress, delivered, cancelled]
+            @Note # [message]
+            @Complaints # [message, image]
+            # @StatusOrder # [pending, accepted, rejected, in_progress, delivered, cancelled]
+- (Admin): reUX
+    - home:
+        @Analytics # [analytics]
+        @Finance # [finance]
+        @Notification # [notification]
+        @Order # [order]
+        @Worker # [worker]
+        @Earning # [earning]
+        @Map # [map]
+    - notifications
+    - profile
+        @EditProfile
+        @ChangePassword
+        @Logout
+    - users
+        @[CRUD]Users
+            @users
+            @workers
+    - orders
+        @[CRUD]Orders
+    - notifications
+    - settings

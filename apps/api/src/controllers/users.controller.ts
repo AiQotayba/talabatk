@@ -153,6 +153,22 @@ export const createAddress = async (req: AuthenticatedRequest, res: Response): P
   }
 };
 
+export const getAddress = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const addressId = req.params.id;
+
+    const address = await prisma.address.findUnique({
+      where: { id: addressId, user_id: userId, deleted_at: null },
+    });
+
+    sendSuccess(res, address, 'Address retrieved successfully');
+  } catch (error) {
+    console.error('Get address error:', error);
+    sendError(res, 'Failed to get address', 500);
+  }
+};
+
 export const updateAddress = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;

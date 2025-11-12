@@ -5,6 +5,7 @@ import {
     updateOrderStatus,
     getClientOrderHistory,
     getDriverPendingOrders,
+    getDriverOrderHistory,
     acceptOrder,
     rejectOrder,
     uploadProof,
@@ -26,10 +27,14 @@ const createOrderSchema = Joi.object({
     content: Joi.string().min(5).max(1000).required(),
     dropoff_address_id: Joi.string().uuid().required(),
     payment_method: Joi.string().valid('cash', 'card').optional(),
+    pickup_lat: Joi.number().min(-90).max(90).optional(),
+    pickup_lng: Joi.number().min(-180).max(180).optional(),
 });
 
 const updateOrderStatusSchema = Joi.object({
     status: Joi.string().valid(...Object.values(OrderStatus)).required(),
+    pickup_lat: Joi.number().min(-90).max(90).optional(),
+    pickup_lng: Joi.number().min(-180).max(180).optional(),
 });
 
 const orderIdSchema = Joi.object({
@@ -53,6 +58,7 @@ router.get('/client/history', requireClient as any, validateQuery(orderHistoryQu
 
 // Driver routes
 router.get('/driver/pending', requireDriver as any, getDriverPendingOrders as any);
+router.get('/driver/history', requireDriver as any, validateQuery(orderHistoryQuerySchema), getDriverOrderHistory as any);
 router.post('/:id/accept', requireDriver as any, validateParams(orderIdSchema), acceptOrder as any);
 router.post('/:id/reject', requireDriver as any, validateParams(orderIdSchema), rejectOrder as any);
 router.post('/:id/proof', requireDriver as any, validateParams(orderIdSchema), uploadProofPhotos, uploadProof as any);

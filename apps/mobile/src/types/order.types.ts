@@ -22,6 +22,7 @@ export interface Address {
 
 export interface Order {
   id: string;
+  code_order: string;
   client_id: string;
   driver_id?: string;
   status: OrderStatus;
@@ -54,3 +55,11 @@ export interface CreateOrderRequest {
 }
 
 
+
+export interface Message {
+  id: string;
+  order_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+}
