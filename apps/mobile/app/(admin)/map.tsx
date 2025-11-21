@@ -22,7 +22,7 @@ export default function AdminMapScreen() {
     const [activeTab, setActiveTab] = useState('all');
     const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 
-    const { data: orders, isLoading, refetch }: any = useQuery({
+    const { data: orders, isLoading }: any = useQuery({
         queryKey: ['admin-map-orders', activeTab],
         queryFn: async () => {
             const response = await apiClient.get<{ data: any }>('/admin/map', {

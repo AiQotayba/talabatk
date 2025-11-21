@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Image, Alert } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import * as Location from 'expo-location';
+import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import MapView, { Marker, PROVIDER_DEFAULT, UrlTile } from 'react-native-maps';
@@ -15,6 +16,9 @@ const addAddressSchema = z.object({
     street: z.string().min(5, 'عنوان الشارع يجب أن يكون على الأقل 5 أحرف'),
     label: z.string().min(2, 'الاسم مطلوب'),
     notes: z.string().optional(),
+    building_number: z.string().optional(),
+    building_image_url: z.string().optional(),
+    door_image_url: z.string().optional(),
     is_default: z.boolean().default(false),
     lat: z.number().min(-90).max(90).optional(),
     lng: z.number().min(-180).max(180).optional(),
@@ -32,6 +36,9 @@ const editAddressSchema = z.object({
     street: z.string().min(5, 'عنوان الشارع يجب أن يكون على الأقل 5 أحرف'),
     label: z.string().min(2, 'الاسم مطلوب'),
     notes: z.string().optional(),
+    building_number: z.string().optional(),
+    building_image_url: z.string().optional(),
+    door_image_url: z.string().optional(),
     is_default: z.boolean().default(false),
     lat: z.number().min(-90).max(90).optional(),
     lng: z.number().min(-180).max(180).optional(),
@@ -69,6 +76,8 @@ export default function AddressForm({
             : null
     );
     const [isLoadingAddress, setIsLoadingAddress] = useState(false);
+    const [buildingImage, setBuildingImage] = useState<string | null>(initialData?.building_image_url || null);
+    const [doorImage, setDoorImage] = useState<string | null>(initialData?.door_image_url || null);
 
     const schema = mode === 'add' ? addAddressSchema : editAddressSchema;
     const isRTL = textDirection === 'rtl';
@@ -87,6 +96,9 @@ export default function AddressForm({
             street: initialData?.street || '',
             label: initialData?.label || '',
             notes: initialData?.notes || '',
+            building_number: (initialData as any)?.building_number || '',
+            building_image_url: initialData?.building_image_url || '',
+            door_image_url: initialData?.door_image_url || '',
             is_default: initialData?.is_default || false,
             lat: initialData?.lat || 0,
             lng: initialData?.lng || 0,
@@ -118,10 +130,15 @@ export default function AddressForm({
                 street: initialData.street || '',
                 label: initialData.label || '',
                 notes: initialData.notes || '',
+                building_number: (initialData as any)?.building_number || '',
+                building_image_url: initialData?.building_image_url || '',
+                door_image_url: initialData?.door_image_url || '',
                 is_default: initialData.is_default || false,
                 lat: initialData.lat || 0,
                 lng: initialData.lng || 0,
             });
+            setBuildingImage(initialData?.building_image_url || null);
+            setDoorImage(initialData?.door_image_url || null);
             if (initialData.lat && initialData.lng) {
                 setMapRegion({
                     latitude: initialData.lat,
@@ -134,27 +151,60 @@ export default function AddressForm({
         }
     }, [initialData, reset]);
 
+    // Alternative reverse geocoding using Nominatim (OpenStreetMap) - free and no API key needed
+    const reverseGeocodeWithNominatim = async (latitude: number, longitude: number) => {
+        try {
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+                {
+                    headers: {
+                        'User-Agent': 'DeliveryApp/1.0', // Required by Nominatim
+                    },
+                }
+            );
+            
+            if (!response.ok) {
+                throw new Error('Reverse geocoding failed');
+            }
+            
+            const data = await response.json();
+            if (data && (data as any).address) {
+                const addr = (data as any).address;
+                return {
+                    street: addr.road || addr.pedestrian || addr.path || '',
+                    streetNumber: addr.house_number || '',
+                    city: addr.city || addr.town || addr.village || addr.municipality || '',
+                };
+            }
+            return null;
+        } catch (error) {
+            console.error('Nominatim reverse geocoding error:', error);
+            return null;
+        }
+    };
+
     const getCurrentLocation = async () => {
         setIsGettingLocation(true);
         try {
             const { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
+                Alert.alert('إذن مطلوب', 'نحتاج إلى إذن للوصول إلى الموقع');
                 return;
             }
 
             const location = await Location.getCurrentPositionAsync({});
             const { latitude, longitude } = location.coords;
 
-            // Reverse geocode to get address
-            const addresses = await Location.reverseGeocodeAsync({
-                latitude,
-                longitude,
-            });
-
-            if (addresses.length > 0) {
-                const address = addresses[0];
-                setValue('street', `${address.street || ''} ${address.streetNumber || ''}`.trim());
-                setValue('city', address.city || '');
+            // Try reverse geocode with Nominatim (fallback if Google fails)
+            try {
+                const address = await reverseGeocodeWithNominatim(latitude, longitude);
+                if (address) {
+                    setValue('street', `${address.street || ''} ${address.streetNumber || ''}`.trim() || watch('street') || '');
+                    setValue('city', address.city || watch('city') || '');
+                }
+            } catch (geocodeError) {
+                // If reverse geocoding fails, user can enter address manually
+                console.log('Reverse geocoding not available, user can enter address manually');
             }
 
             // Store coordinates for submission
@@ -171,6 +221,7 @@ export default function AddressForm({
             setSelectedLocation({ lat: latitude, lng: longitude });
         } catch (error: any) {
             console.error('Get location error:', error);
+            Alert.alert('خطأ', 'فشل الحصول على الموقع. يرجى المحاولة مرة أخرى أو تحديد الموقع يدوياً على الخريطة.');
         } finally {
             setIsGettingLocation(false);
         }
@@ -183,24 +234,85 @@ export default function AddressForm({
         setValue('lat', latitude);
         setValue('lng', longitude);
 
-        // Reverse geocode to get address
+        // Reverse geocode to get address using Nominatim
         setIsLoadingAddress(true);
         try {
-            const addresses = await Location.reverseGeocodeAsync({
-                latitude,
-                longitude,
-            });
-
-            if (addresses.length > 0) {
-                const address = addresses[0];
+            const address = await reverseGeocodeWithNominatim(latitude, longitude);
+            if (address) {
                 setValue('street', `${address.street || ''} ${address.streetNumber || ''}`.trim() || watch('street') || '');
                 setValue('city', address.city || watch('city') || '');
             }
         } catch (error) {
             console.error('Reverse geocoding error:', error);
+            // If reverse geocoding fails, user can enter address manually - no error shown
         } finally {
             setIsLoadingAddress(false);
         }
+    };
+
+    const pickImage = async (type: 'building' | 'door') => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('إذن مطلوب', 'نحتاج إلى إذن للوصول إلى الصور');
+            return;
+        }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+            // @ts-ignore - MediaTypeOptions is deprecated but still works in this version
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 0.8,
+        });
+
+        if (!result.canceled && result.assets[0]) {
+            const imageUri = result.assets[0].uri;
+            if (type === 'building') {
+                setBuildingImage(imageUri);
+                setValue('building_image_url', imageUri);
+            } else {
+                setDoorImage(imageUri);
+                setValue('door_image_url', imageUri);
+            }
+        }
+    };
+
+    const takePhoto = async (type: 'building' | 'door') => {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('إذن مطلوب', 'نحتاج إلى إذن للوصول إلى الكاميرا');
+            return;
+        }
+
+        const result = await ImagePicker.launchCameraAsync({
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 0.8,
+        });
+
+        if (!result.canceled && result.assets[0]) {
+            const imageUri = result.assets[0].uri;
+            if (type === 'building') {
+                setBuildingImage(imageUri);
+                setValue('building_image_url', imageUri);
+            } else {
+                setDoorImage(imageUri);
+                setValue('door_image_url', imageUri);
+            }
+        }
+    };
+
+    const showImageOptions = (type: 'building' | 'door') => {
+        Alert.alert(
+            type === 'building' ? 'صورة البناء' : 'صورة باب المنزل',
+            '',
+            [
+                { text: 'الكاميرا', onPress: () => takePhoto(type) },
+                { text: 'المعرض', onPress: () => pickImage(type) },
+                { text: 'إلغاء', style: 'cancel' },
+            ],
+            { cancelable: true }
+        );
     };
 
     const handleFormSubmit = async (data: AddressFormData) => {
@@ -406,6 +518,85 @@ export default function AddressForm({
 
             <Animated.View entering={FadeInDown.duration(600).delay(250)}>
                 <View className="mb-5">
+                    <Text className={`text-sm font-semibold text-gray-900 mb-2 ${textStart}`}>رقم المبنى (اختياري)</Text>
+                    <Controller
+                        control={control}
+                        name="building_number"
+                        render={({ field: { onChange, onBlur, value } }) => (
+                            <TextInput
+                                className={`border border-gray-300 rounded-xl px-4 py-4 text-base bg-white ${textStart}`}
+                                placeholder="أدخل رقم المبنى"
+                                placeholderTextColor="#9ca3af"
+                                value={value}
+                                onBlur={onBlur}
+                                onChangeText={onChange}
+                                style={{ textAlign }}
+                            />
+                        )}
+                    />
+                </View>
+            </Animated.View>
+
+            <Animated.View entering={FadeInDown.duration(600).delay(300)}>
+                <View className="mb-5">
+                    <Text className={`text-sm font-semibold text-gray-900 mb-2 ${textStart}`}>صورة البناء (اختياري)</Text>
+                    {buildingImage ? (
+                        <View className="relative mb-2">
+                            <Image source={{ uri: buildingImage }} className="w-full rounded-xl" style={{ height: 200, resizeMode: 'cover' }} />
+                            <TouchableOpacity
+                                className="absolute top-2 right-2 bg-red-500 rounded-full p-2"
+                                onPress={() => {
+                                    setBuildingImage(null);
+                                    setValue('building_image_url', '');
+                                }}
+                            >
+                                <Ionicons name="close" size={20} color="white" />
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        <TouchableOpacity
+                            className="border-2 border-dashed border-gray-300 rounded-xl p-6 items-center justify-center"
+                            onPress={() => showImageOptions('building')}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="camera-outline" size={32} color="#9ca3af" />
+                            <Text className={`text-gray-500 text-sm mt-2 ${textStart}`}>اضغط لإضافة صورة البناء</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
+            </Animated.View>
+
+            <Animated.View entering={FadeInDown.duration(600).delay(350)}>
+                <View className="mb-5">
+                    <Text className={`text-sm font-semibold text-gray-900 mb-2 ${textStart}`}>صورة باب المنزل (اختياري)</Text>
+                    {doorImage ? (
+                        <View className="relative mb-2">
+                            <Image source={{ uri: doorImage }} className="w-full rounded-xl" style={{ height: 200, resizeMode: 'cover' }} />
+                            <TouchableOpacity
+                                className="absolute top-2 right-2 bg-red-500 rounded-full p-2"
+                                onPress={() => {
+                                    setDoorImage(null);
+                                    setValue('door_image_url', '');
+                                }}
+                            >
+                                <Ionicons name="close" size={20} color="white" />
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        <TouchableOpacity
+                            className="border-2 border-dashed border-gray-300 rounded-xl p-6 items-center justify-center"
+                            onPress={() => showImageOptions('door')}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="camera-outline" size={32} color="#9ca3af" />
+                            <Text className={`text-gray-500 text-sm mt-2 ${textStart}`}>اضغط لإضافة صورة باب المنزل</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
+            </Animated.View>
+
+            <Animated.View entering={FadeInDown.duration(600).delay(400)}>
+                <View className="mb-5">
                     <Text className={`text-sm font-semibold text-gray-900 mb-2 ${textStart}`}>ملاحظات (اختياري)</Text>
                     <Controller
                         control={control}
@@ -428,7 +619,7 @@ export default function AddressForm({
                 </View>
             </Animated.View>
 
-            <Animated.View entering={FadeInDown.duration(600).delay(300)}>
+            <Animated.View entering={FadeInDown.duration(600).delay(450)}>
                 <View className="mb-6">
                     <Controller
                         control={control}
@@ -453,7 +644,7 @@ export default function AddressForm({
                 </View>
             </Animated.View>
 
-            <Animated.View entering={FadeInDown.duration(600).delay(350)}>
+            <Animated.View entering={FadeInDown.duration(600).delay(500)}>
                 <TouchableOpacity
                     className="bg-primary-600 rounded-xl py-4"
                     onPress={handleSubmit(handleFormSubmit)}

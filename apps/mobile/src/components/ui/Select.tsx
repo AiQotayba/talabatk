@@ -42,7 +42,7 @@ export default function Select({
                 <Text className="text-sm font-semibold text-gray-900 mb-2 text-start">{label}</Text>
             )}
             <TouchableOpacity
-                className="border border-gray-300 max-h-10 rounded-xl px-4 py-4 bg-white flex-row items-center justify-between"
+                className="border border-gray-300 rounded-xl px-4 py-4 bg-white flex-row items-center justify-between"
                 onPress={() => !disabled && setIsOpen(true)}
                 disabled={disabled}
                 activeOpacity={0.7}

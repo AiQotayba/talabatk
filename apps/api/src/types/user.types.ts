@@ -11,6 +11,9 @@ export interface CreateAddressRequest {
   lng: number;
   is_default?: boolean;
   notes?: string;
+  building_number?: string;
+  building_image_url?: string;
+  door_image_url?: string;
 }
 
 export interface UpdateAddressRequest {
@@ -21,4 +24,7 @@ export interface UpdateAddressRequest {
   lng?: number;
   is_default?: boolean;
   notes?: string;
+  building_number?: string;
+  building_image_url?: string;
+  door_image_url?: string;
 }

@@ -11,7 +11,6 @@ export default function ClientTabsLayout() {
         tabBarStyle: {
           backgroundColor: '#ffffff',
           borderTopColor: '#e5e7eb',
-          // height: 60,
         },
         tabBarLabelStyle: {
           fontSize: 12,
@@ -33,7 +32,7 @@ export default function ClientTabsLayout() {
         options={{
           title: 'طلباتي',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="receipt" size={size} color={color} />
+            <Ionicons name="cart" size={size} color={color} />
           ),
         }}
       />

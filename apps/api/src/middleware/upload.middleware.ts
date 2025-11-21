@@ -20,6 +20,8 @@ const storage = multer.diskStorage({
       uploadDir = path.join(uploadDir, 'proofs');
     } else if (file.fieldname === 'complaint_photos') {
       uploadDir = path.join(uploadDir, 'complaints');
+    } else if (file.fieldname === 'message_images') {
+      uploadDir = path.join(uploadDir, 'messages');
     } else {
       uploadDir = path.join(uploadDir, 'general');
     }
@@ -66,6 +68,33 @@ export const upload = multer({
   }
 });
 
-export const uploadProfilePhoto = upload.single('profile_photo') as any;
+// Profile photo upload middleware with error handling
+export const uploadProfilePhoto = (req: any, res: any, next: any) => {
+  upload.single('profile_photo')(req, res, (err: any) => {
+    if (err) {
+      console.error('Upload middleware error:', err);
+      return res.status(400).json({
+        success: false,
+        message: err.message || 'Failed to upload file',
+      });
+    }
+    
+    // Log for debugging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Upload middleware - File received:', {
+        file: req.file ? {
+          fieldname: req.file.fieldname,
+          originalname: req.file.originalname,
+          mimetype: req.file.mimetype,
+          size: req.file.size,
+        } : null,
+        body: req.body,
+      });
+    }
+    
+    next();
+  });
+};
 export const uploadProofPhotos = upload.array('proof_photos', 5) as any;
 export const uploadComplaintPhotos = upload.array('complaint_photos', 5) as any;
+export const uploadMessageImages = upload.array('message_images', 5) as any;

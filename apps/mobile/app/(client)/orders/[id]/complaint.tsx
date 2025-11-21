@@ -22,6 +22,7 @@ export default function ComplaintScreen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
+      // @ts-ignore - MediaTypeOptions is deprecated but still works in this version
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsMultipleSelection: true,
       quality: 0.8,

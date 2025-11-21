@@ -18,6 +18,9 @@ export interface Address {
   lng: number;
   is_default: boolean;
   notes?: string;
+  building_number?: string;
+  building_image_url?: string;
+  door_image_url?: string;
 }
 
 export interface Order {

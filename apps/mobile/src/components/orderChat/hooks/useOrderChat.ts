@@ -17,15 +17,12 @@ export const useOrderChat = ({ orderId, role }: UseOrderChatProps) => {
     const queryClient = useQueryClient();
     const { user } = useAppSelector((state) => state.auth);
     const { messages } = useAppSelector((state) => state.messages);
-
-    // Fetch order
     const { data: order, isLoading: orderLoading } = useQuery({
         queryKey: ['order', orderId],
-        queryFn: async () => {
-            const response = await apiClient.get<Order>(`/orders/${orderId}`);
-            return response.data;
-        },
+        queryFn: () => apiClient.get(`/orders/${orderId}`).then(r => r.data),
         enabled: !!orderId,
+        refetchInterval: 5000, // تحديث كل 5 ثواني
+        staleTime: 4000, // اعتبر الداتا جديدة 4 ثواني فقط
     });
 
     // Fetch messages
@@ -36,6 +33,8 @@ export const useOrderChat = ({ orderId, role }: UseOrderChatProps) => {
             return response.data || [];
         },
         enabled: !!orderId,
+        refetchInterval: 5000, // تحديث كل 5 ثواني
+        staleTime: 4000, // اعتبر الداتا جديدة 4 ثواني فقط
     });
 
     // Update Redux store
@@ -53,11 +52,52 @@ export const useOrderChat = ({ orderId, role }: UseOrderChatProps) => {
 
     // Send message mutation
     const sendMessageMutation = useMutation({
-        mutationFn: async (content: string) => {
+        mutationFn: async ({ content, attachments }: { content: string; attachments?: string[] }) => {
+            let uploadedUrls: string[] = [];
+
+            // Upload images if attachments are provided
+            if (attachments && attachments.length > 0) {
+                const filesToUpload = attachments.filter(uri => uri.startsWith('file://'));
+                const existingUrls = attachments.filter(uri => !uri.startsWith('file://'));
+
+                // Add existing URLs
+                uploadedUrls = [...existingUrls];
+
+                // Upload local files
+                if (filesToUpload.length > 0) {
+                    const formData = new FormData();
+                    filesToUpload.forEach((uri, index) => {
+                        const filename = uri.split('/').pop() || `image_${index}.jpg`;
+                        const match = /\.(\w+)$/.exec(filename);
+                        const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+                        formData.append('message_images', {
+                            uri,
+                            type,
+                            name: filename,
+                        } as any);
+                    });
+
+                    try {
+                        const uploadResponse = await apiClient.uploadFile<{ urls: string[] }>('/messages/upload-images', formData);
+                        // API returns { data: { urls: [...] } }
+                        const urls = (uploadResponse as any).data?.urls || [];
+                        if (urls.length > 0) {
+                            uploadedUrls = [...uploadedUrls, ...urls];
+                        }
+                    } catch (error) {
+                        console.error('Failed to upload images:', error);
+                        throw error;
+                    }
+                }
+            }
+
+            // Send message with uploaded URLs
             const response = await apiClient.post<Message>('/messages', {
                 order_id: orderId,
                 content,
-                message_type: 'text',
+                message_type: uploadedUrls.length > 0 ? 'image' : 'text',
+                attachments: uploadedUrls.length > 0 ? uploadedUrls : undefined,
             });
             return response.data;
         },
@@ -88,7 +128,7 @@ export const useOrderChat = ({ orderId, role }: UseOrderChatProps) => {
         isSending: sendMessageMutation.isPending,
         currentUserId: user?.id,
         role,
-        sendMessage: (content: string) => sendMessageMutation.mutate(content),
+        sendMessage: (content: string, attachments?: string[]) => sendMessageMutation.mutate({ content, attachments }),
         updateOrderStatus: (status: string) => updateStatusMutation.mutate(status),
     };
 };

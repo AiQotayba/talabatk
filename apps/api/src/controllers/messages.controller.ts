@@ -3,6 +3,7 @@ import { sendSuccess, sendError } from '../utils/response.util';
 import { AuthenticatedRequest } from '../types/common.types';
 import prisma from '../config/database';
 import { Server } from 'socket.io';
+import path from 'path';
 
 export const sendMessage = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
@@ -206,5 +207,21 @@ export const markAsRead = async (req: AuthenticatedRequest, res: Response): Prom
   } catch (error) {
     console.error('Mark as read error:', error);
     sendError(res, 'Failed to mark message as read', 500);
+  }
+};
+
+export const uploadMessageImages = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+      sendError(res, 'No images uploaded', 400);
+      return;
+    }
+
+    const imageUrls = req.files.map((file: Express.Multer.File) => `/uploads/messages/${file.filename}`);
+
+    sendSuccess(res, { urls: imageUrls }, 'Images uploaded successfully');
+  } catch (error) {
+    console.error('Upload message images error:', error);
+    sendError(res, 'Failed to upload images', 500);
   }
 };

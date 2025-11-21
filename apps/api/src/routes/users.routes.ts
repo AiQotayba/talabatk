@@ -32,7 +32,10 @@ const createAddressSchema = Joi.object({
     lat: Joi.number().min(-90).max(90).required(),
     lng: Joi.number().min(-180).max(180).required(),
     is_default: Joi.boolean().optional(),
-    notes: Joi.string().max(500).optional(),
+    notes: Joi.string().max(500).optional().allow('', null),
+    building_number: Joi.string().max(50).optional().allow('', null),
+    building_image_url: Joi.string().optional().allow('', null), // Allow file:// URIs from mobile
+    door_image_url: Joi.string().optional().allow('', null), // Allow file:// URIs from mobile
 });
 
 const updateAddressSchema = Joi.object({
@@ -42,7 +45,10 @@ const updateAddressSchema = Joi.object({
     lat: Joi.number().min(-90).max(90).optional(),
     lng: Joi.number().min(-180).max(180).optional(),
     is_default: Joi.boolean().optional(),
-    notes: Joi.string().max(500).optional(),
+    notes: Joi.string().max(500).optional().allow('', null),
+    building_number: Joi.string().max(50).optional().allow('', null),
+    building_image_url: Joi.string().optional().allow('', null), // Allow file:// URIs from mobile
+    door_image_url: Joi.string().optional().allow('', null), // Allow file:// URIs from mobile
 });
 
 const addressIdSchema = Joi.object({

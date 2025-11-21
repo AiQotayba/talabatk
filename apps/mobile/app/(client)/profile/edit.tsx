@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator, Image } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Image, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,6 +12,7 @@ import { apiClient } from '@/services/api/apiClient';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Header from '@/components/ui/header';
+import { useToast } from '@/contexts/ToastContext';
 
 const profileSchema = z.object({
   name: z.string().min(2, 'الاسم يجب أن يكون على الأقل حرفين'),
@@ -25,6 +26,7 @@ export default function EditProfileScreen() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
+  const { showSuccess, showError } = useToast();
   const [profilePhoto, setProfilePhoto] = useState<string | null>(user?.profile_photo_url || null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
@@ -51,11 +53,11 @@ export default function EditProfileScreen() {
       if (data.user) {
         dispatch(updateProfile(data.user));
       }
-      Alert.alert('نجح', 'تم تحديث الملف الشخصي بنجاح');
+      showSuccess('تم تحديث الملف الشخصي بنجاح');
       router.back();
     },
     onError: (error: any) => {
-      Alert.alert('خطأ', error.message || 'فشل تحديث الملف الشخصي');
+      showError(error.message || 'فشل تحديث الملف الشخصي');
     },
   });
 
@@ -66,6 +68,7 @@ export default function EditProfileScreen() {
       const match = /\.(\w+)$/.exec(filename);
       const type = match ? `image/${match[1]}` : 'image/jpeg';
 
+      // For React Native, FormData needs this specific format
       formData.append('profile_photo', {
         uri,
         name: filename,
@@ -80,11 +83,11 @@ export default function EditProfileScreen() {
         dispatch(updateProfile(data.user));
         setProfilePhoto(data.user.profile_photo_url || null);
       }
-      Alert.alert('نجح', 'تم تحديث الصورة الشخصية بنجاح');
+      showSuccess('تم تحديث الصورة الشخصية بنجاح');
       setIsUploadingPhoto(false);
     },
     onError: (error: any) => {
-      Alert.alert('خطأ', error.message || 'فشل رفع الصورة');
+      showError(error.message || 'فشل رفع الصورة');
       setIsUploadingPhoto(false);
     },
   });
@@ -93,11 +96,12 @@ export default function EditProfileScreen() {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('طلب مرفوض', 'يجب منح إذن الوصول إلى الصور');
+        showError('يجب منح إذن الوصول إلى الصور');
         return;
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
+        // @ts-ignore - MediaTypeOptions is deprecated but still works in this version
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
@@ -109,7 +113,7 @@ export default function EditProfileScreen() {
         uploadPhotoMutation.mutate(result.assets[0].uri);
       }
     } catch (error: any) {
-      Alert.alert('خطأ', error.message || 'فشل اختيار الصورة');
+      showError(error.message || 'فشل اختيار الصورة');
       setIsUploadingPhoto(false);
     }
   };
@@ -168,7 +172,7 @@ export default function EditProfileScreen() {
               <Ionicons name="camera" size={20} color="white" />
             </View>
           </TouchableOpacity>
-          <Text className="text-gray-600 text-sm mt-4 text-center">اضغط لتغيير الصورة الشخصية</Text>
+          <Text className="text-gray-600 text-sm mt-4 text-start">اضغط لتغيير الصورة الشخصية</Text>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(600).delay(100)}>

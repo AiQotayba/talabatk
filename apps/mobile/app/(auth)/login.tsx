@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Ionicons } from '@expo/vector-icons';
+import { Entypo, FontAwesome, Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { login } from '@/store/slices/auth.slice';
 import { ROUTES } from '@/utils/constants';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/contexts/ToastContext';
 
 const loginSchema = z.object({
   email: z.string().email('البريد الإلكتروني غير صحيح'),
@@ -22,6 +23,7 @@ export default function LoginScreen() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { isLoading } = useAppSelector((state) => state.auth);
+  const { showError } = useToast();
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -48,7 +50,7 @@ export default function LoginScreen() {
         router.replace(ROUTES.ADMIN_HOME);
       }
     } catch (error: any) {
-      Alert.alert('فشل تسجيل الدخول', error || 'البريد الإلكتروني أو كلمة المرور غير صحيحة');
+      showError(error || 'البريد الإلكتروني أو كلمة المرور غير صحيحة');
     }
   };
 
@@ -72,8 +74,8 @@ export default function LoginScreen() {
             <Ionicons name="log-in" size={40} color="#E02020" />
           </View>
         </View>
-        <Text className="text-3xl font-bold text-gray-900 mb-2 text-center">أهلاً بك</Text>
-        <Text className="text-gray-600 text-base text-center">سجل دخولك للمتابعة</Text>
+        <Text className="text-3xl font-bold text-gray-900 mb-2 text-start">أهلاً بك</Text>
+        <Text className="text-gray-600 text-base text-start">سجل دخولك للمتابعة</Text>
       </Animated.View>
 
       <View className="col-span-1">
@@ -145,7 +147,7 @@ export default function LoginScreen() {
           onPress={() => router.push('/(auth)/forgot-password')}
           className="mb-2 p-0 w-max "
         >
-          <Text className="text-primary-600 text-right font-medium text-base w-max">نسيت كلمة المرور؟</Text>
+          <Text className="text-primary-600 text-start font-medium text-base w-max">نسيت كلمة المرور؟</Text>
         </TouchableOpacity>
       </View>
 
@@ -171,21 +173,28 @@ export default function LoginScreen() {
 
       <View className="flex-row justify-center items-center gap-2 " style={{ flexDirection: 'row-reverse' }}>
         <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
-          <Text className="text-primary-600 font-bold text-base">إنشاء حساب</Text>
+          <Text className="text-primary-600 font-bold text-base text-start">إنشاء حساب</Text>
         </TouchableOpacity>
-        <Text className="text-gray-600 text-base">ليس لديك حساب؟</Text>
+        <Text className="text-gray-600 text-base text-start">ليس لديك حساب؟</Text>
       </View>
 
       <View className='w-full flex flex-row justify-center items-center gap-4 bg-gray-200 rounded-xl h-0.5'></View>
 
       <View className='flex flex-row flex-wrap justify-center items-center gap-4  *:w-[48%] w-full'>
-        <Button variant='outline' className='w-full' onPress={() => router.push('/onboarding')} disabled={false} loading={false}>الترحيب</Button>
-        <Button variant='outline' className='w-[30%]' onPress={() => handleDefaultData("client")} disabled={false} loading={false}>عميل</Button>
-        <Button variant='outline' className='w-[30%]' onPress={() => handleDefaultData("driver")} disabled={false} loading={false}>سائق</Button>
-        <Button variant='outline' className='w-[30%]' onPress={() => handleDefaultData("admin")} disabled={false} loading={false}>مدير</Button>
+
+        <Button variant='outline' className='w-[30%]' onPress={() => handleDefaultData("client")} disabled={false} loading={false}>
+          <Ionicons name="person-outline" size={24} color="#E02020" />
+        </Button>
+        <Button variant='outline' className='w-[30%]' onPress={() => handleDefaultData("driver")} disabled={false} loading={false}>
+          <FontAwesome name="motorcycle" size={24} color="#E02020" />
+        </Button>
+        <Button variant='outline' className='w-[30%]' onPress={() => handleDefaultData("admin")} disabled={false} loading={false}>
+          <Ionicons name="shield-outline" size={24} color="#E02020" />
+        </Button>
+        <Button variant='outline' className='w-full' onPress={() => router.push('/onboarding')} disabled={false} loading={false}>
+          <Entypo name="flower" size={24} color="#E02020" />
+        </Button>
       </View>
     </View>
   );
 }
-
-

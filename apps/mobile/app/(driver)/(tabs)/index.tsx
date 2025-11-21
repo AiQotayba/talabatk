@@ -4,22 +4,30 @@ import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAppSelector } from '@/store/hooks';
 import { apiClient } from '@/services/api/apiClient';
-import { Order } from '@/types/order.types';
+import { Order, OrderStatus } from '@/types/order.types';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import DriverStatusCard, { DriverStatus } from '@/components/driver/DriverStatusCard';
 import PendingOrderCard from '@/components/driver/PendingOrderCard';
 import { useToast } from '@/contexts/ToastContext';
 import Header from '@/components/ui/header';
+import Tabs, { TabItem } from '@/components/ui/tabs';
+
+const ORDER_FILTER_TABS: TabItem[] = [
+    { id: 'all', label: 'الكل', icon: 'list' },
+    { id: 'pending', label: 'معلقة', icon: 'time' },
+    { id: 'assigned', label: 'معينة', icon: 'person-add' },
+];
 
 export default function DriverDashboardScreen() {
     const router = useRouter();
     const queryClient = useQueryClient();
-    const { user } = useAppSelector((state) => state.auth);
+    const { user } = useAppSelector((state: any) => state.auth);
     const { showSuccess, showError } = useToast();
 
     // Get driver status (default to available)
     const [driverStatus, setDriverStatus] = useState<DriverStatus>('available');
+    const [orderFilter, setOrderFilter] = useState<string>('all');
 
     // Fetch pending orders
     const { data: pendingOrders, isLoading, refetch } = useQuery({
@@ -31,6 +39,14 @@ export default function DriverDashboardScreen() {
         enabled: driverStatus === 'available',
         refetchInterval: 5000, // Refetch every 5 seconds
     });
+
+    // Filter orders based on selected filter
+    const filteredOrders = pendingOrders?.filter((order) => {
+        if (orderFilter === 'all') return true;
+        if (orderFilter === 'pending') return order.status === 'pending';
+        if (orderFilter === 'assigned') return order.status === 'assigned';
+        return true;
+    }) || [];
 
     // Fetch driver stats
     const { data: driverOrders } = useQuery({
@@ -120,11 +136,15 @@ export default function DriverDashboardScreen() {
                     <View className="mb-6">
                         <View className="flex-row items-center justify-between mb-4">
                             <Text className="text-xl font-bold text-gray-900 text-right">الطلبات المعلقة</Text>
-                            {pendingOrders && pendingOrders.length > 0 && (
+                            {filteredOrders && filteredOrders.length > 0 && (
                                 <View className="bg-primary-100 px-3 py-1 rounded-full">
-                                    <Text className="text-primary-600 font-bold text-sm">{pendingOrders.length}</Text>
+                                    <Text className="text-primary-600 font-bold text-sm">{filteredOrders.length}</Text>
                                 </View>
                             )}
+                        </View>
+
+                        <View className="mb-4">
+                            <Tabs tabs={ORDER_FILTER_TABS} activeTab={orderFilter} onTabChange={setOrderFilter} />
                         </View>
 
                         {isLoading ? (
@@ -132,8 +152,8 @@ export default function DriverDashboardScreen() {
                                 <ActivityIndicator size="large" color="#E02020" />
                                 <Text className="text-gray-500 mt-4 text-right">جاري التحميل...</Text>
                             </View>
-                        ) : pendingOrders && pendingOrders.length > 0 ? (
-                            pendingOrders.map((order, index) => (
+                        ) : filteredOrders && filteredOrders.length > 0 ? (
+                            filteredOrders.slice(0, 3).map((order, index) => (
                                 <PendingOrderCard
                                     key={order.id}
                                     order={order}

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { View, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { useState, useRef, useEffect } from 'react';
+import { View, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { OrderChatProps } from './types';
 import { useOrderChat } from './hooks/useOrderChat';
@@ -8,19 +8,35 @@ import OrderDetails from './OrderDetails';
 import MessagesList from './MessagesList';
 import ChatInput from './ChatInput';
 import OrderActionsMenu from './OrderActionsMenu';
+import { useToast } from '@/contexts/ToastContext';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
 export default function OrderChat({ orderId, role, onBack, onAction }: OrderChatProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const scrollViewRef = useRef<any>(null);
+  const { showError } = useToast();
+  const { showDialog, DialogComponent } = useConfirmDialog();
   const { order, messages, isLoading, isSending, currentUserId, sendMessage, updateOrderStatus } = useOrderChat({
     orderId,
     role,
   });
 
+  // Scroll to bottom when messages update
+  useEffect(() => {
+    if (messages.length > 0 && scrollViewRef.current) {
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  }, [messages.length]);
+
   const handleCancel = () => {
-    Alert.alert('إلغاء الطلب', 'هل أنت متأكد من إلغاء هذا الطلب؟', [
-      { text: 'لا', style: 'cancel' },
-      { text: 'نعم', onPress: () => updateOrderStatus('cancelled') },
-    ]);
+    showDialog({
+      title: 'إلغاء الطلب',
+      message: 'هل أنت متأكد من إلغاء هذا الطلب؟',
+      type: 'danger',
+      onConfirm: () => updateOrderStatus('cancelled'),
+    });
   };
 
   const handleAction = (actionId: string) => {
@@ -54,15 +70,28 @@ export default function OrderChat({ orderId, role, onBack, onAction }: OrderChat
       <OrderChatHeader
         order={order}
         role={role}
-        onBack={onBack || (() => {})}
+        onBack={onBack || (() => { })}
         onMenuPress={() => setIsMenuOpen(true)}
       />
 
       <OrderDetails order={order} role={role} />
 
-      <MessagesList messages={messages} currentUserId={currentUserId} isLoading={isLoading} />
+      <MessagesList 
+        messages={messages} 
+        currentUserId={currentUserId} 
+        isLoading={isLoading}
+        scrollViewRef={scrollViewRef}
+      />
 
-      <ChatInput onSend={sendMessage} isSending={isSending} />
+      <ChatInput
+        onSend={(content, attachments) => {
+          // TODO: Handle image upload and send message with attachments
+          sendMessage(content);
+        }}
+        isSending={isSending}
+        role={role}
+        showReadyMessages={role === 'driver'}
+      />
 
       <OrderActionsMenu
         visible={isMenuOpen}
@@ -76,6 +105,8 @@ export default function OrderChat({ orderId, role, onBack, onAction }: OrderChat
         onReject={() => handleAction('reject')}
         onUpdateStatus={(status) => handleAction(status)}
       />
+
+      <DialogComponent />
     </KeyboardAvoidingView>
   );
 }

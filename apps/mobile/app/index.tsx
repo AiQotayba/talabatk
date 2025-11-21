@@ -44,7 +44,7 @@ export default function Index() {
   if (!isAuthenticated) {
     return <Redirect href={ROUTES.LOGIN} />;
   }
-
+console.log(user?.role);
   // Redirect based on user role
   if (user?.role === 'client') {
     return <Redirect href={ROUTES.CLIENT_HOME} />;

@@ -23,20 +23,32 @@ class ApiClient {
     // Request interceptor
     this.client.interceptors.request.use(
       async (config: InternalAxiosRequestConfig) => {
+        // For file uploads (FormData), handle differently
+        if (config.data instanceof FormData) {
+          // Remove Content-Type to let React Native set it with boundary
+          if (config.headers) {
+            delete config.headers['Content-Type'];
+            delete (config.headers as any)['content-type'];
+            delete config.headers['Accept'];
+          }
+          // Don't add request ID for file uploads to avoid issues
+        } else {
+          // Add request ID for tracking (only for non-file uploads)
+          config.headers['X-Request-ID'] = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        }
+
         // Add auth token
         const token = await SecureStore.getItemAsync(STORAGE_KEYS.ACCESS_TOKEN);
         if (token && config.headers) {
           config.headers.Authorization = `Bearer ${token}`;
         }
 
-        // Add request ID for tracking
-        config.headers['X-Request-ID'] = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
         // Log in development
         if (__DEV__) {
           console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`, {
-            data: config.data,
+            data: config.data instanceof FormData ? '[FormData]' : config.data,
             params: config.params,
+            headers: config.data instanceof FormData ? 'FormData headers handled by RN' : config.headers,
           });
         }
 
@@ -140,14 +152,81 @@ class ApiClient {
 
   // File upload helper
   async uploadFile<T = any>(url: string, formData: FormData, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
-    const response = await this.client.post<ApiResponse<T>>(url, formData, {
-      ...config,
-      headers: {
-        ...config?.headers,
-        'Content-Type': 'multipart/form-data',
-      },
+    // Get auth token for file upload
+    const token = await SecureStore.getItemAsync(STORAGE_KEYS.ACCESS_TOKEN);
+    
+    // Build headers - critical for React Native FormData
+    const headers: any = {
+      Authorization: token ? `Bearer ${token}` : undefined,
+      // DO NOT set Content-Type - React Native will set it automatically with boundary
+      // DO NOT set Accept header for file uploads
+    };
+    
+    // Remove any Content-Type or Accept headers to let React Native handle it
+    delete headers['Content-Type'];
+    delete headers['content-type'];
+    delete headers['Accept'];
+    delete headers['accept'];
+    
+    // Merge with any custom headers from config (but still remove Content-Type)
+    if (config?.headers) {
+      Object.keys(config.headers).forEach(key => {
+        const lowerKey = key.toLowerCase();
+        if (lowerKey !== 'content-type' && lowerKey !== 'accept') {
+          headers[key] = (config.headers as any)[key];
+        }
+      });
+    }
+    
+    // Create a fresh axios instance for file uploads to avoid interceptor issues
+    const uploadClient = axios.create({
+      baseURL: this.client.defaults.baseURL,
+      timeout: config?.timeout || 60000, // 60 seconds for file uploads
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
     });
-    return response.data;
+    
+    // Add auth token to headers
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    
+    try {
+      // Make request directly without interceptors that might interfere
+      const response = await uploadClient.post<ApiResponse<T>>(
+        url,
+        formData,
+        {
+          ...config,
+          headers,
+          transformRequest: (data, requestHeaders) => {
+            // Remove Content-Type header if it exists - React Native will set it
+            if (requestHeaders) {
+              delete requestHeaders['Content-Type'];
+              delete (requestHeaders as any)['content-type'];
+              delete requestHeaders['Accept'];
+              delete (requestHeaders as any)['accept'];
+            }
+            // Return FormData as-is - React Native will handle it
+            return data;
+          },
+        }
+      );
+      return response.data;
+    } catch (error: any) {
+      // Enhanced error logging for debugging
+      if (__DEV__) {
+        console.error('[Upload Error]', {
+          url,
+          error: error.message,
+          code: error.code,
+          response: error.response?.data,
+          request: error.request,
+          stack: error.stack,
+        });
+      }
+      throw error;
+    }
   }
 }
 

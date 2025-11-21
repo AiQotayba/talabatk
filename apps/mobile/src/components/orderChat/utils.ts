@@ -43,3 +43,17 @@ export const canRateOrder = (order: Order, role: string): boolean => {
   return role === 'client' && order.status === 'delivered';
 };
 
+export const getStatusIcon = (status: string): string => {
+  switch (status) {
+    case 'delivered':
+      return 'checkmark-circle';
+    case 'cancelled':
+    case 'failed':
+      return 'close-circle';
+    case 'pending':
+    case 'assigned':
+      return 'time';
+    default:
+      return 'information-circle';
+  }
+};

@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "Delivery App",
-    "slug": "delivery-app",
+    "name": "talabatk",
+    "slug": "talabatk",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo.png",
     "iconBackgroundColor": "#ffffff",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -17,14 +17,14 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.deliveryapp.mobile"
+      "bundleIdentifier": "com.talabatk.mobile"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/logo.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.deliveryapp.mobile",
+      "package": "com.talabatk.mobile",
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
@@ -53,14 +53,14 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/icon.png",
+          "icon": "./assets/logo.png",
           "color": "#ffffff"
         }
       ],
       "expo-secure-store",
       "expo-font"
     ],
-    "scheme": "deliveryapp",
+    "scheme": "talabatk",
     "experiments": {
       "typedRoutes": true
     }

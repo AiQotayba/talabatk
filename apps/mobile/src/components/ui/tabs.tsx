@@ -18,7 +18,7 @@ interface TabsProps {
 
 export default function Tabs({ tabs, activeTab, onTabChange, className = '' }: TabsProps) {
     return (
-        <View className={`bg-white rounded-xl p-2 flex-row gap-2 ${className}`} style={{ direction: 'rtl' }}>
+        <View className={`bg-gray-100 rounded-xl p-2 flex-row gap-2 ${className}`} style={{ direction: 'rtl' }}>
             {tabs.map((tab, index) => {
                 const isActive = activeTab === tab.id;
                 return (
@@ -31,7 +31,7 @@ export default function Tabs({ tabs, activeTab, onTabChange, className = '' }: T
                     >
                         <Animated.View
                             entering={FadeInDown.duration(300).delay(index * 50)}
-                            className="items-center"
+                            className="items-center flex-row gap-2"
                         >
                             <View className="relative">
                                 <Ionicons

@@ -66,6 +66,21 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response): P
 
 export const uploadProfilePhoto = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
+    // Debug logging
+    console.log('Upload profile photo - Request:', {
+      hasFile: !!req.file,
+      file: req.file ? {
+        fieldname: req.file.fieldname,
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+      } : null,
+      body: req.body,
+      headers: {
+        'content-type': req.headers['content-type'],
+      },
+    });
+
     if (!req.file) {
       sendError(res, 'No file uploaded', 400);
       return;
@@ -123,7 +138,18 @@ export const getAddresses = async (req: AuthenticatedRequest, res: Response): Pr
 export const createAddress = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
-    const { city, street, label, lat, lng, is_default, notes }: CreateAddressRequest = req.body;
+    const { 
+      city, 
+      street, 
+      label, 
+      lat, 
+      lng, 
+      is_default, 
+      notes,
+      building_number,
+      building_image_url,
+      door_image_url
+    }: CreateAddressRequest = req.body;
 
     // If this is set as default, unset other defaults
     if (is_default) {
@@ -143,13 +169,22 @@ export const createAddress = async (req: AuthenticatedRequest, res: Response): P
         lng,
         is_default: is_default || false,
         notes,
+        building_number: building_number || null,
+        building_image_url: building_image_url || null,
+        door_image_url: door_image_url || null,
       }
     });
 
     sendSuccess(res, address, 'Address created successfully', 201);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Create address error:', error);
-    sendError(res, 'Failed to create address', 500);
+    // Log more details about the error
+    if (error.code === 'P2022' || error.message?.includes('does not exist')) {
+      console.error('Database schema mismatch. Please run: npx prisma db push');
+      sendError(res, 'Database schema needs to be updated. Please contact administrator.', 500);
+    } else {
+      sendError(res, error.message || 'Failed to create address', 500);
+    }
   }
 };
 
@@ -173,7 +208,18 @@ export const updateAddress = async (req: AuthenticatedRequest, res: Response): P
   try {
     const userId = req.user!.id;
     const addressId = req.params.id;
-    const { city, street, label, lat, lng, is_default, notes }: UpdateAddressRequest = req.body;
+    const { 
+      city, 
+      street, 
+      label, 
+      lat, 
+      lng, 
+      is_default, 
+      notes,
+      building_number,
+      building_image_url,
+      door_image_url
+    }: UpdateAddressRequest = req.body;
 
     // Check if address belongs to user
     const existingAddress = await prisma.address.findFirst({
@@ -207,6 +253,9 @@ export const updateAddress = async (req: AuthenticatedRequest, res: Response): P
         ...(lng !== undefined && { lng }),
         ...(is_default !== undefined && { is_default }),
         ...(notes !== undefined && { notes }),
+        ...(building_number !== undefined && { building_number: building_number || null }),
+        ...(building_image_url !== undefined && { building_image_url: building_image_url || null }),
+        ...(door_image_url !== undefined && { door_image_url: door_image_url || null }),
       }
     });
 

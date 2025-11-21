@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useAppSelector } from '@/store/hooks';
@@ -7,12 +7,21 @@ import { Order } from '@/types/order.types';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import OrderCard from '@/components/order/order-card';
-import Header from '@/components/ui/header';
+import { useRef, useEffect, useState } from 'react';
 
+// Mock banner data - replace with actual API call
+const BANNERS = [
+  { id: 1, image: 'https://i.ytimg.com/vi/xkUtZQZKork/hqdefault.jpg?sqp=-oaymwEnCNACELwBSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLBDfToSo75RUVbIsR7MZFLFF-dOkg', link: '/(client)/orders/create' },
+  { id: 2, image: 'https://i.ytimg.com/vi/8WITSihkoqo/hqdefault.jpg?sqp=-oaymwEnCNACELwBSFryq4qpAxkIARUAAIhCGAHYAQHiAQoIGBACGAY4AUAB&rs=AOn4CLB_cnnSHmnYIo8QP1xX7OfhbSkhZw', link: '/(client)/orders/create' },
+];
 
 export default function ClientHomeScreen() {
   const router = useRouter();
   const { user } = useAppSelector((state) => state.auth);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const bannerWidth = 350 + 12; // width + margin
+  // Start from middle set for infinite scroll in both directions
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(BANNERS.length);
 
   const { data: ordersData, isLoading, refetch } = useQuery({
     queryKey: ['client-orders', 'recent'],
@@ -22,16 +31,116 @@ export default function ClientHomeScreen() {
     },
   });
 
+  // Featured orders (completed and active orders)
+  const featuredOrders = ordersData?.filter(
+    (order) => order.status === 'delivered' || order.status === 'accepted' || order.status === 'in_transit'
+  ) || [];
+
+  // Create infinite banners (duplicate for seamless loop)
+  const infiniteBanners = [...BANNERS, ...BANNERS, ...BANNERS];
+
+  // Calculate scroll position for RTL (from right to left)
+  const getRTLScrollPosition = (index: number) => {
+    const totalWidth = infiniteBanners.length * bannerWidth;
+    return totalWidth - (index * bannerWidth) - bannerWidth;
+  };
+
+  // Initialize scroll position to middle set (RTL)
+  useEffect(() => {
+    if (scrollViewRef.current) {
+      setTimeout(() => {
+        const initialPosition = getRTLScrollPosition(BANNERS.length);
+        scrollViewRef.current?.scrollTo({
+          x: initialPosition,
+          animated: false,
+        });
+      }, 100);
+    }
+  }, [bannerWidth]);
+
+  // Auto-scroll banners every 4 seconds (RTL - from right to left)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentBannerIndex((prev) => {
+        const nextIndex = prev + 1;
+        // If we've scrolled to the end of second set, jump back to start of second set
+        if (nextIndex >= BANNERS.length * 2) {
+          setTimeout(() => {
+            const resetPosition = getRTLScrollPosition(BANNERS.length);
+            scrollViewRef.current?.scrollTo({ 
+              x: resetPosition, 
+              animated: false 
+            });
+            setCurrentBannerIndex(BANNERS.length);
+          }, 50);
+          return BANNERS.length;
+        }
+        return nextIndex;
+      });
+    }, 4000); // Changed from 3000 to 4000 (4 seconds)
+
+    return () => clearInterval(interval);
+  }, [bannerWidth]);
+
+  // Scroll to current banner index (RTL)
+  useEffect(() => {
+    if (scrollViewRef.current) {
+      const scrollPosition = getRTLScrollPosition(currentBannerIndex);
+      scrollViewRef.current.scrollTo({
+        x: scrollPosition,
+        animated: true,
+      });
+    }
+  }, [currentBannerIndex, bannerWidth]);
+
   return (
     <ScrollView
-      className="flex-1 my-10 bg-gray-50"
+      className="flex-1 my-8 bg-gray-50"
       refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} />}
       showsVerticalScrollIndicator={false}
       style={{ direction: 'rtl' }}
     >
-      <Header title={`أهلاً بك، ${user?.name}`} description="شو بدك تطلب اليوم؟" />
+      {/* <Header title={`أهلاً بك، ${user?.name}`} description="شو بدك تطلب اليوم؟" /> */}
 
       <View className="px-6 mt-4" style={{ direction: 'rtl' }}>
+        {/* Banners */}
+        <Animated.View entering={FadeInDown.duration(3000).delay(50)} className="mb-6">
+          <ScrollView 
+            ref={scrollViewRef}
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            pagingEnabled={false}
+            className="rounded-xl"
+            style={{ direction: 'rtl' }}
+            scrollEventThrottle={16}
+            onMomentumScrollEnd={(event) => {
+              const offsetX = event.nativeEvent.contentOffset.x;
+              // For RTL, calculate index from right to left
+              const totalWidth = infiniteBanners.length * bannerWidth;
+              const scrollFromRight = totalWidth - offsetX;
+              const index = Math.round(scrollFromRight / bannerWidth);
+              setCurrentBannerIndex(index);
+            }}
+          >
+            {infiniteBanners.map((banner, index) => (
+              <TouchableOpacity
+                key={`${banner.id}-${index}`}
+                className="ml-3 rounded-xl overflow-hidden"
+                onPress={() => router.push(banner.link as any)}
+                activeOpacity={0.9}
+                style={{ width: 350, height: 180 }}
+              >
+                <Image
+                  source={{ uri: banner.image }}
+                  className="w-full h-full"
+                  style={{ resizeMode: 'cover' }}
+                />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </Animated.View>
+
+        {/* Create New Order Button */}
         <Animated.View entering={FadeInDown.duration(600).delay(100)}>
           <TouchableOpacity
             className="bg-primary-600 rounded-xl py-5 px-6 mb-6"
@@ -54,6 +163,22 @@ export default function ClientHomeScreen() {
           </TouchableOpacity>
         </Animated.View>
 
+        {/* Featured Orders */}
+        {featuredOrders.length > 0 && (
+          <View className="mb-6">
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-xl font-bold text-gray-900 text-start">الطلبات المميزة</Text>
+              <TouchableOpacity onPress={() => router.push('/(client)/orders' as any)}>
+                <Text className="text-primary-600 text-sm font-semibold">عرض الكل</Text>
+              </TouchableOpacity>
+            </View>
+            {featuredOrders.slice(0, 3).map((order, index) => (
+              <OrderCard key={order.id} order={order} index={index} />
+            ))}
+          </View>
+        )}
+
+        {/* Recent Orders */}
         <View className="mb-6">
           <Text className="text-xl font-bold text-gray-900 mb-4 text-start">الطلبات الأخيرة</Text>
           {isLoading ? (

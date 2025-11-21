@@ -64,18 +64,21 @@ model User {
 }
 
 model Address {
-  id          String   @id @default(uuid())
-  user_id     String
-  city        String?
-  street      String?
-  label       String?
-  postal_code String?
-  lat         Float?   // Optional in DB for backward compatibility, but required in validation
-  lng         Float?   // Optional in DB for backward compatibility, but required in validation
-  is_default  Boolean  @default(false)
-  notes       String?
-  created_at  DateTime @default(now())
-  deleted_at  DateTime?
+  id                String   @id @default(uuid())
+  user_id           String
+  city              String?
+  street            String?
+  label             String?
+  postal_code       String?
+  building_number   String?
+  building_image_url String?
+  door_image_url    String?
+  lat               Float?   // Optional in DB for backward compatibility, but required in validation
+  lng               Float?   // Optional in DB for backward compatibility, but required in validation
+  is_default        Boolean  @default(false)
+  notes             String?
+  created_at        DateTime @default(now())
+  deleted_at        DateTime?
 
   user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
   orders  Order[]

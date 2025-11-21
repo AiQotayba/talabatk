@@ -2,10 +2,12 @@ import { Router } from 'express';
 import { 
   sendMessage,
   getOrderMessages,
-  markAsRead
+  markAsRead,
+  uploadMessageImages
 } from '../controllers/messages.controller';
 import { authenticateToken } from '../middleware/auth.middleware';
 import { validate, validateParams } from '../middleware/validation.middleware';
+import { uploadMessageImages as uploadMiddleware } from '../middleware/upload.middleware';
 import Joi from 'joi';
 
 const router: Router = Router();
@@ -39,6 +41,7 @@ const orderIdSchema = Joi.object({
 });
 
 // Message routes
+router.post('/upload-images', uploadMiddleware, uploadMessageImages as any);
 router.post('/', validate(sendMessageSchema), sendMessage as any);
 router.get('/order/:id', validateParams(orderIdSchema), getOrderMessages as any);
 router.put('/:id/read', validateParams(messageIdSchema), markAsRead as any);
