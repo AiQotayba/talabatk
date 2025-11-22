@@ -1,0 +1,62 @@
+{
+    "name": "mobile",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "apps/mobile",
+    "projectType": "application",
+    "targets": {
+        "dev": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "expo start --clear",
+                "cwd": "apps/mobile"
+            }
+        },
+        "start": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "expo start",
+                "cwd": "apps/mobile"
+            }
+        },
+        "android": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "expo run:android",
+                "cwd": "apps/mobile"
+            }
+        },
+        "ios": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "expo run:ios",
+                "cwd": "apps/mobile"
+            }
+        },
+        "web": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "expo start --web",
+                "cwd": "apps/mobile"
+            }
+        },
+        "lint": {
+            "executor": "@nx/eslint:lint",
+            "options": {
+                "lintFilePatterns": [
+                    "apps/mobile/**/*.{ts,tsx,js,jsx}"
+                ]
+            }
+        },
+        "type-check": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "tsc --noEmit",
+                "cwd": "apps/mobile"
+            }
+        }
+    },
+    "tags": [
+        "type:app",
+        "platform:mobile"
+    ]
+}

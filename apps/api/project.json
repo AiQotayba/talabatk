@@ -1,0 +1,110 @@
+{
+    "name": "api",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "apps/api/src",
+    "projectType": "application",
+    "targets": {
+        "dev": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "ts-node-dev --respawn --transpile-only src/app.ts",
+                "cwd": "apps/api"
+            }
+        },
+        "build": {
+            "executor": "@nx/js:tsc",
+            "outputs": [
+                "{options.outputPath}"
+            ],
+            "options": {
+                "outputPath": "dist/apps/api",
+                "main": "apps/api/src/app.ts",
+                "tsConfig": "apps/api/tsconfig.json",
+                "assets": [
+                    "apps/api/src/**/*.json"
+                ]
+            }
+        },
+        "start": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "node dist/app.js",
+                "cwd": "apps/api"
+            },
+            "dependsOn": [
+                "build"
+            ]
+        },
+        "migrate": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "prisma migrate dev",
+                "cwd": "apps/api"
+            }
+        },
+        "migrate:deploy": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "prisma migrate deploy",
+                "cwd": "apps/api"
+            }
+        },
+        "db": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "npx prisma generate --schema=prisma/schema.prisma && npx prisma db push",
+                "cwd": "apps/api"
+            }
+        },
+        "generate": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "prisma generate",
+                "cwd": "apps/api"
+            }
+        },
+        "seed": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "ts-node prisma/seed.ts",
+                "cwd": "apps/api"
+            }
+        },
+        "setup": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "node scripts/setup.js",
+                "cwd": "apps/api"
+            }
+        },
+        "test": {
+            "executor": "@nx/jest:jest",
+            "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+            ],
+            "options": {
+                "jestConfig": "apps/api/jest.config.js",
+                "passWithNoTests": true
+            }
+        },
+        "lint": {
+            "executor": "@nx/eslint:lint",
+            "options": {
+                "lintFilePatterns": [
+                    "apps/api/src/**/*.ts"
+                ]
+            }
+        },
+        "lint:fix": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "eslint src/**/*.ts --fix",
+                "cwd": "apps/api"
+            }
+        }
+    },
+    "tags": [
+        "type:app",
+        "platform:backend"
+    ]
+}

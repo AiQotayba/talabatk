@@ -1,0 +1,25 @@
+{
+    "name": "talabatk",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Talabatk Delivery App Monorepo",
+    "license": "MIT",
+    "scripts": {
+        "dev": "nx run-many --target=dev --all --parallel=3",
+        "build": "nx run-many --target=build --all",
+        "test": "nx run-many --target=test --all",
+        "lint": "nx run-many --target=lint --all",
+        "nx": "nx"
+    },
+    "devDependencies": {
+        "@nx/devkit": "^20.3.0",
+        "@nx/eslint": "^20.3.0",
+        "@nx/jest": "^20.3.0",
+        "@nx/js": "^20.3.0",
+        "@nx/node": "^20.3.0",
+        "@nx/react-native": "^20.3.0",
+        "@nx/workspace": "^20.3.0",
+        "nx": "^20.3.0",
+        "typescript": "^5.9.3"
+    }
+}

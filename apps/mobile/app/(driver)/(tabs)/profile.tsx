@@ -1,30 +1,13 @@
 import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { logout } from '@/store/slices/auth.slice';
+import { useAppSelector } from '@/store/hooks';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useConfirmDialog } from '@/hooks/useConfirmDialog';
-import { ROUTES } from '@/utils/constants';
+import Logout from '@/components/atoms/logout';
 
 export default function DriverProfileScreen() {
     const router = useRouter();
-    const dispatch = useAppDispatch();
     const { user } = useAppSelector((state) => state.auth);
-    const { showDialog, DialogComponent } = useConfirmDialog();
-
-    const handleLogout = () => {
-        showDialog({
-            title: 'تسجيل الخروج',
-            message: 'هل أنت متأكد من تسجيل الخروج؟',
-            type: 'warning',
-            onConfirm: () => {
-                dispatch(logout() as any);
-                router.push(ROUTES.LOGIN);
-                router.replace(ROUTES.LOGIN);
-            },
-        });
-    };
 
     return (
         <ScrollView className="flex-1 bg-gray-50 mt-8" showsVerticalScrollIndicator={false} style={{ direction: 'rtl' }}>
@@ -77,19 +60,8 @@ export default function DriverProfileScreen() {
                         <Ionicons name="chevron-back" size={20} color="#9ca3af" />
                     </TouchableOpacity>
                 </Animated.View>
-
-                <Animated.View entering={FadeInDown.duration(600).delay(200)}>
-                    <TouchableOpacity
-                        className="bg-red-50 rounded-xl p-4 mb-6 flex-row items-center justify-center"
-                        onPress={handleLogout}
-                        activeOpacity={0.7}
-                    >
-                        <Ionicons name="log-out-outline" size={24} color="#dc2626" />
-                        <Text className="text-red-600 font-semibold text-base mr-2">تسجيل الخروج</Text>
-                    </TouchableOpacity>
-                </Animated.View>
+                <Logout />
             </View>
-            <DialogComponent />
         </ScrollView>
     );
 }

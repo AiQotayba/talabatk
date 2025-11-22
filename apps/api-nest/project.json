@@ -1,0 +1,157 @@
+{
+    "name": "api-nest",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "apps/api-nest/src",
+    "projectType": "application",
+    "targets": {
+        "build": {
+            "executor": "@nx/js:tsc",
+            "outputs": [
+                "{options.outputPath}"
+            ],
+            "options": {
+                "outputPath": "dist/apps/api-nest",
+                "main": "apps/api-nest/src/main.ts",
+                "tsConfig": "apps/api-nest/tsconfig.json",
+                "assets": [
+                    "apps/api-nest/src/**/*.json"
+                ]
+            }
+        },
+        "start": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "nest start",
+                "cwd": "apps/api-nest"
+            }
+        },
+        "start:dev": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "nest start --watch",
+                "cwd": "apps/api-nest"
+            }
+        },
+        "start:debug": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "nest start --debug --watch",
+                "cwd": "apps/api-nest"
+            }
+        },
+        "start:prod": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "node dist/main",
+                "cwd": "apps/api-nest"
+            },
+            "dependsOn": [
+                "build"
+            ]
+        },
+        "format": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+                "cwd": "apps/api-nest"
+            }
+        },
+        "lint": {
+            "executor": "@nx/eslint:lint",
+            "options": {
+                "lintFilePatterns": [
+                    "apps/api-nest/{src,apps,libs,test}/**/*.ts"
+                ]
+            }
+        },
+        "test": {
+            "executor": "@nx/jest:jest",
+            "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+            ],
+            "options": {
+                "jestConfig": "apps/api-nest/jest.config.js",
+                "passWithNoTests": true
+            }
+        },
+        "test:watch": {
+            "executor": "@nx/jest:jest",
+            "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+            ],
+            "options": {
+                "jestConfig": "apps/api-nest/jest.config.js",
+                "watch": true,
+                "passWithNoTests": true
+            }
+        },
+        "test:cov": {
+            "executor": "@nx/jest:jest",
+            "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+            ],
+            "options": {
+                "jestConfig": "apps/api-nest/jest.config.js",
+                "coverage": true,
+                "passWithNoTests": true
+            }
+        },
+        "test:e2e": {
+            "executor": "@nx/jest:jest",
+            "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+            ],
+            "options": {
+                "jestConfig": "apps/api-nest/test/jest-e2e.json",
+                "passWithNoTests": true
+            }
+        },
+        "db:generate": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "prisma generate",
+                "cwd": "apps/api-nest"
+            }
+        },
+        "db:migrate": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "prisma migrate dev",
+                "cwd": "apps/api-nest"
+            }
+        },
+        "db:deploy": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "prisma migrate deploy",
+                "cwd": "apps/api-nest"
+            }
+        },
+        "db:seed": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "tsx prisma/seed.ts",
+                "cwd": "apps/api-nest"
+            }
+        },
+        "db:studio": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "prisma studio",
+                "cwd": "apps/api-nest"
+            }
+        },
+        "db:reset": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "prisma migrate reset",
+                "cwd": "apps/api-nest"
+            }
+        }
+    },
+    "tags": [
+        "type:app",
+        "platform:backend",
+        "framework:nestjs"
+    ]
+}

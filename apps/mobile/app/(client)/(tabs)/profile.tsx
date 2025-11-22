@@ -1,33 +1,14 @@
-import { View, Text, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { logout } from '@/store/slices/auth.slice';
-import { ROUTES } from '@/utils/constants';
+import { useAppSelector } from '@/store/hooks';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import Logout from '@/components/atoms/logout';
 
 export default function ClientProfileScreen() {
   const router = useRouter();
-  const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
 
-  const handleLogout = () => {
-    Alert.alert(
-      'تسجيل الخروج',
-      'هل أنت متأكد من تسجيل الخروج؟',
-      [
-        { text: 'إلغاء', style: 'cancel' },
-        {
-          text: 'تسجيل الخروج',
-          style: 'destructive',
-          onPress: async () => {
-            await dispatch(logout());
-            router.replace(ROUTES.LOGIN);
-          },
-        },
-      ]
-    );
-  };
 
   return (
     <ScrollView className="flex-1 bg-gray-50" showsVerticalScrollIndicator={false} style={{ direction: 'rtl' }}>
@@ -58,8 +39,8 @@ export default function ClientProfileScreen() {
 
       <View className="bg-white mb-4">
         <Animated.View entering={FadeInDown.duration(600).delay(100)}>
-          <TouchableOpacity 
-            className="flex-row items-center px-6 py-4 border-b border-gray-100" 
+          <TouchableOpacity
+            className="flex-row items-center px-6 py-4 border-b border-gray-100"
             activeOpacity={0.7}
             onPress={() => router.push('/(client)/profile/edit')}
             style={{ flexDirection: 'row' }}
@@ -71,8 +52,8 @@ export default function ClientProfileScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(600).delay(150)}>
-          <TouchableOpacity 
-            className="flex-row items-center px-6 py-4 border-b border-gray-100" 
+          <TouchableOpacity
+            className="flex-row items-center px-6 py-4 border-b border-gray-100"
             activeOpacity={0.7}
             onPress={() => router.push('/(client)/addresses')}
             style={{ flexDirection: 'row' }}
@@ -126,25 +107,7 @@ export default function ClientProfileScreen() {
       </View>
 
       <View className="px-6 py-4">
-        <Animated.View entering={FadeInDown.duration(600).delay(350)}>
-          <TouchableOpacity
-            className="bg-error-600 rounded-xl py-4"
-            onPress={handleLogout}
-            activeOpacity={0.8}
-            style={{
-              shadowColor: '#dc2626',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.2,
-              shadowRadius: 8,
-              elevation: 4,
-            }}
-          >
-            <View className="flex-row items-center justify-center gap-2" style={{ flexDirection: 'row' }}>
-              <Ionicons name="log-out-outline" size={20} color="#ffffff" />
-              <Text className="text-white text-center font-bold text-base">تسجيل الخروج</Text>
-            </View>
-          </TouchableOpacity>
-        </Animated.View>
+        <Logout />
       </View>
     </ScrollView>
   );

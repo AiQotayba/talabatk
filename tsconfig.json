@@ -3,17 +3,19 @@
   "references": [
     {
       "path": "./apps/api"
-    },
-    {
-      "path": "./apps/api-nest"
-    },
+    }, 
     {
       "path": "./apps/mobile"
     }
   ],
   "compilerOptions": {
     "composite": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "strict": false,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node"
   }
 }
 
