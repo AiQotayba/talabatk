@@ -3,7 +3,6 @@ import { sendSuccess, sendError } from '../utils/response.util';
 import { AuthenticatedRequest } from '../types/common.types';
 import { UpdateProfileRequest, CreateAddressRequest, UpdateAddressRequest } from '../types/user.types';
 import prisma from '../config/database';
-import path from 'path';
 
 export const getProfile = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
@@ -23,14 +22,14 @@ export const getProfile = async (req: AuthenticatedRequest, res: Response): Prom
     });
 
     if (!user) {
-      sendError(res, 'User not found', 404);
+      sendError(res, 'لم يتم العثور على المستخدم. يرجى التحقق من بياناتك أو تسجيل الدخول مرة أخرى', 404);
       return;
     }
 
-    sendSuccess(res, user, 'Profile retrieved successfully');
+    sendSuccess(res, user, 'تم تحميل الملف الشخصي بنجاح');
   } catch (error) {
     console.error('Get profile error:', error);
-    sendError(res, 'Failed to retrieve profile', 500);
+    sendError(res, 'حدث خطأ أثناء تحميل الملف الشخصي. يرجى المحاولة مرة أخرى', 500);
   }
 };
 
@@ -57,36 +56,26 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response): P
       }
     });
 
-    sendSuccess(res, updatedUser, 'Profile updated successfully');
+    sendSuccess(res, updatedUser, 'تم تحديث الملف الشخصي بنجاح! تم حفظ التغييرات');
   } catch (error) {
     console.error('Update profile error:', error);
-    sendError(res, 'Failed to update profile', 500);
+    sendError(res, 'حدث خطأ أثناء تحديث الملف الشخصي. يرجى المحاولة مرة أخرى', 500);
   }
 };
 
 export const uploadProfilePhoto = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    // Debug logging
-    console.log('Upload profile photo - Request:', {
-      hasFile: !!req.file,
-      file: req.file ? {
-        fieldname: req.file.fieldname,
-        originalname: req.file.originalname,
-        mimetype: req.file.mimetype,
-        size: req.file.size,
-      } : null,
-      body: req.body,
-      headers: {
-        'content-type': req.headers['content-type'],
-      },
-    });
-
+    console.log(req.file);
+    
     if (!req.file) {
-      sendError(res, 'No file uploaded', 400);
+      sendError(res, 'لم يتم رفع أي صورة. يرجى اختيار صورة للملف الشخصي', 400);
       return;
     }
 
     const userId = req.user!.id;
+    // Get base URL from environment or construct from request
+    const baseUrl = process.env.API_BASE_URL || 
+      `${req.protocol}://${req.get('host')}`;
     const filePath = `/uploads/profiles/${req.file.filename}`;
 
     const updatedUser = await prisma.user.update({
@@ -106,10 +95,10 @@ export const uploadProfilePhoto = async (req: AuthenticatedRequest, res: Respons
       }
     });
 
-    sendSuccess(res, updatedUser, 'Profile photo uploaded successfully');
+    sendSuccess(res, updatedUser, 'تم رفع صورة الملف الشخصي بنجاح! تم تحديث صورتك');
   } catch (error) {
     console.error('Upload profile photo error:', error);
-    sendError(res, 'Failed to upload profile photo', 500);
+    sendError(res, 'حدث خطأ أثناء رفع الصورة. يرجى التأكد من صحة الصورة والمحاولة مرة أخرى', 500);
   }
 };
 
@@ -128,10 +117,10 @@ export const getAddresses = async (req: AuthenticatedRequest, res: Response): Pr
       ]
     });
 
-    sendSuccess(res, addresses, 'Addresses retrieved successfully');
+    sendSuccess(res, addresses, 'تم تحميل العناوين بنجاح');
   } catch (error) {
     console.error('Get addresses error:', error);
-    sendError(res, 'Failed to retrieve addresses', 500);
+    sendError(res, 'حدث خطأ أثناء تحميل العناوين. يرجى المحاولة مرة أخرى', 500);
   }
 };
 
@@ -146,9 +135,9 @@ export const createAddress = async (req: AuthenticatedRequest, res: Response): P
       lng, 
       is_default, 
       notes,
-      building_number,
-      building_image_url,
-      door_image_url
+      // building_number,
+      // building_image_url,
+      // door_image_url
     }: CreateAddressRequest = req.body;
 
     // If this is set as default, unset other defaults
@@ -169,21 +158,21 @@ export const createAddress = async (req: AuthenticatedRequest, res: Response): P
         lng,
         is_default: is_default || false,
         notes,
-        building_number: building_number || null,
-        building_image_url: building_image_url || null,
-        door_image_url: door_image_url || null,
+        // building_number: building_number || null,
+        // building_image_url: building_image_url || null,
+        // door_image_url: door_image_url || null,
       }
     });
 
-    sendSuccess(res, address, 'Address created successfully', 201);
+    sendSuccess(res, address, 'تم إضافة العنوان بنجاح! يمكنك استخدامه عند إنشاء طلب جديد', 201);
   } catch (error: any) {
     console.error('Create address error:', error);
     // Log more details about the error
     if (error.code === 'P2022' || error.message?.includes('does not exist')) {
       console.error('Database schema mismatch. Please run: npx prisma db push');
-      sendError(res, 'Database schema needs to be updated. Please contact administrator.', 500);
+      sendError(res, 'حدث خطأ في النظام. يرجى التواصل مع الدعم الفني', 500);
     } else {
-      sendError(res, error.message || 'Failed to create address', 500);
+      sendError(res, error.message || 'حدث خطأ أثناء إضافة العنوان. يرجى التحقق من البيانات والمحاولة مرة أخرى', 500);
     }
   }
 };
@@ -197,10 +186,10 @@ export const getAddress = async (req: AuthenticatedRequest, res: Response): Prom
       where: { id: addressId, user_id: userId, deleted_at: null },
     });
 
-    sendSuccess(res, address, 'Address retrieved successfully');
+    sendSuccess(res, address, 'تم تحميل العنوان بنجاح');
   } catch (error) {
     console.error('Get address error:', error);
-    sendError(res, 'Failed to get address', 500);
+    sendError(res, 'حدث خطأ أثناء تحميل العنوان. يرجى المحاولة مرة أخرى', 500);
   }
 };
 
@@ -231,7 +220,7 @@ export const updateAddress = async (req: AuthenticatedRequest, res: Response): P
     });
 
     if (!existingAddress) {
-      sendError(res, 'Address not found', 404);
+      sendError(res, 'لم يتم العثور على العنوان. يرجى التحقق من العنوان أو إضافة عنوان جديد', 404);
       return;
     }
 
@@ -259,10 +248,10 @@ export const updateAddress = async (req: AuthenticatedRequest, res: Response): P
       }
     });
 
-    sendSuccess(res, updatedAddress, 'Address updated successfully');
+    sendSuccess(res, updatedAddress, 'تم تحديث العنوان بنجاح! تم حفظ التغييرات');
   } catch (error) {
     console.error('Update address error:', error);
-    sendError(res, 'Failed to update address', 500);
+    sendError(res, 'حدث خطأ أثناء تحديث العنوان. يرجى المحاولة مرة أخرى', 500);
   }
 };
 
@@ -281,7 +270,7 @@ export const deleteAddress = async (req: AuthenticatedRequest, res: Response): P
     });
 
     if (!existingAddress) {
-      sendError(res, 'Address not found', 404);
+      sendError(res, 'لم يتم العثور على العنوان. يرجى التحقق من العنوان', 404);
       return;
     }
 
@@ -291,9 +280,47 @@ export const deleteAddress = async (req: AuthenticatedRequest, res: Response): P
       data: { deleted_at: new Date() }
     });
 
-    sendSuccess(res, null, 'Address deleted successfully');
+    sendSuccess(res, null, 'تم حذف العنوان بنجاح');
   } catch (error) {
     console.error('Delete address error:', error);
-    sendError(res, 'Failed to delete address', 500);
+    sendError(res, 'حدث خطأ أثناء حذف العنوان. يرجى المحاولة مرة أخرى', 500);
+  }
+};
+
+export const getFeaturedOrders = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const now = new Date();
+    
+    // Get active featured orders that are within their date range
+    const featuredOrders = await prisma.featuredOrder.findMany({
+      where: {
+        is_active: true,
+        start_date: { lte: now },
+        end_date: { gte: now },
+      },
+      orderBy: { created_at: 'desc' },
+      take: 5, // Last 5 as specified
+    });
+
+    sendSuccess(res, featuredOrders, 'تم تحميل الطلبات المميزة بنجاح');
+  } catch (error) {
+    console.error('Get featured orders error:', error);
+    sendError(res, 'حدث خطأ أثناء تحميل الطلبات المميزة. يرجى المحاولة مرة أخرى', 500);
+  }
+};
+
+export const getBannersUser = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const banners = await prisma.banner.findMany({
+      where: {
+        is_active: true,
+      },
+      orderBy: { order_index: 'asc' },
+    });
+
+    sendSuccess(res, banners, 'تم تحميل الإعلانات بنجاح');
+  } catch (error) {
+    console.error('Get banners error:', error);
+    sendError(res, 'حدث خطأ أثناء تحميل الإعلانات. يرجى المحاولة مرة أخرى', 500);
   }
 };

@@ -1,16 +1,15 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAppSelector } from '@/store/hooks';
 import { apiClient } from '@/services/api/apiClient';
-import { Order, OrderStatus } from '@/types/order.types';
+import { Order } from '@/types/order.types';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import DriverStatusCard, { DriverStatus } from '@/components/driver/DriverStatusCard';
+import DriverHeaderStatus, { DriverStatus } from '@/components/driver/DriverHeaderStatus';
 import PendingOrderCard from '@/components/driver/PendingOrderCard';
-import { useToast } from '@/contexts/ToastContext';
-import Header from '@/components/ui/header';
+import { Toast } from '@/utils/toast';
 import Tabs, { TabItem } from '@/components/ui/tabs';
 
 const ORDER_FILTER_TABS: TabItem[] = [
@@ -23,38 +22,25 @@ export default function DriverDashboardScreen() {
     const router = useRouter();
     const queryClient = useQueryClient();
     const { user } = useAppSelector((state: any) => state.auth);
-    const { showSuccess, showError } = useToast();
 
     // Get driver status (default to available)
     const [driverStatus, setDriverStatus] = useState<DriverStatus>('available');
     const [orderFilter, setOrderFilter] = useState<string>('all');
 
-    // Fetch pending orders
-    const { data: pendingOrders, isLoading, refetch } = useQuery({
-        queryKey: ['driver-pending-orders'],
+    // Fetch orders with filter
+    const { data: ordersData, isLoading, refetch } = useQuery({
+        queryKey: ['driver-orders', orderFilter],
         queryFn: async () => {
-            const response = await apiClient.get<Order[]>('/orders/driver/pending');
-            return response.data || [];
+            const statusParam = orderFilter === 'all' ? 'all' : orderFilter;
+            const response = await apiClient.get<Order[]>(`/orders/driver?status=${statusParam}`);
+            // apiClient.get returns ApiResponse<T> which has { success, data, ... }
+            // For paginated responses, data is the array directly
+            // For non-paginated, data is also the array
+            const orders = response.data || [];
+            return Array.isArray(orders) ? orders : [];
         },
         enabled: driverStatus === 'available',
         refetchInterval: 5000, // Refetch every 5 seconds
-    });
-
-    // Filter orders based on selected filter
-    const filteredOrders = pendingOrders?.filter((order) => {
-        if (orderFilter === 'all') return true;
-        if (orderFilter === 'pending') return order.status === 'pending';
-        if (orderFilter === 'assigned') return order.status === 'assigned';
-        return true;
-    }) || [];
-
-    // Fetch driver stats
-    const { data: driverOrders } = useQuery({
-        queryKey: ['driver-orders'],
-        queryFn: async () => {
-            const response = await apiClient.get<Order[]>('/orders/driver/history');
-            return response.data || [];
-        },
     });
 
     // Update driver status mutation
@@ -67,6 +53,7 @@ export default function DriverDashboardScreen() {
         onSuccess: (status) => {
             setDriverStatus(status);
             queryClient.invalidateQueries({ queryKey: ['driver-pending-orders'] });
+            queryClient.invalidateQueries({ queryKey: ['driver-orders'] });
         },
     });
 
@@ -76,16 +63,14 @@ export default function DriverDashboardScreen() {
             const response = await apiClient.post(`/orders/${orderId}/accept`);
             return response.data;
         },
-        onSuccess: () => {
+        onSuccess: (_, orderId) => {
             queryClient.invalidateQueries({ queryKey: ['driver-pending-orders'] });
             queryClient.invalidateQueries({ queryKey: ['driver-orders'] });
-            showSuccess('تم قبول الطلب بنجاح');
-            if (acceptOrderMutation.variables) {
-                router.push(`/(driver)/orders/${acceptOrderMutation.variables}` as any);
-            }
+            Toast.success('تم القبول بنجاح', 'تم قبول الطلب بنجاح! يمكنك الآن البدء في التوصيل');
+            router.push(`/(driver)/orders/${orderId}` as any);
         },
         onError: (error: any) => {
-            showError(error.message || 'فشل قبول الطلب');
+            Toast.error('فشل القبول', error.message || 'حدث خطأ أثناء قبول الطلب. يرجى المحاولة مرة أخرى');
         },
     });
 
@@ -97,24 +82,19 @@ export default function DriverDashboardScreen() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['driver-pending-orders'] });
-            showSuccess('تم رفض الطلب');
+            queryClient.invalidateQueries({ queryKey: ['driver-orders'] });
+            Toast.success('تم الرفض', 'تم رفض الطلب بنجاح. سيتم إرساله لسائق آخر');
         },
         onError: (error: any) => {
-            showError(error.message || 'فشل رفض الطلب');
+            Toast.error('فشل الرفض', error.message || 'حدث خطأ أثناء رفض الطلب. يرجى المحاولة مرة أخرى');
         },
     });
 
-    const handleStatusChange = (status: DriverStatus) => {
-        updateStatusMutation.mutate(status);
-    };
+    const handleStatusChange = (status: DriverStatus) => updateStatusMutation.mutate(status);
 
-    const handleAcceptOrder = (orderId: string) => {
-        acceptOrderMutation.mutate(orderId);
-    };
+    const handleAcceptOrder = (orderId: string) => acceptOrderMutation.mutate(orderId);
 
-    const handleRejectOrder = (orderId: string) => {
-        rejectOrderMutation.mutate(orderId);
-    };
+    const handleRejectOrder = (orderId: string) => rejectOrderMutation.mutate(orderId);
 
     return (
         <ScrollView
@@ -123,10 +103,9 @@ export default function DriverDashboardScreen() {
             showsVerticalScrollIndicator={false}
             style={{ direction: 'rtl' }}
         >
-            <Header title={`أهلاً بك، ${user?.name}`} description="جاهز للعمل اليوم؟" />
-
             <View className="px-6 mt-4" style={{ direction: 'rtl' }}>
-                <DriverStatusCard
+                <DriverHeaderStatus
+                    userName={user?.name}
                     currentStatus={driverStatus}
                     onStatusChange={handleStatusChange}
                     isLoading={updateStatusMutation.isPending}
@@ -136,9 +115,9 @@ export default function DriverDashboardScreen() {
                     <View className="mb-6">
                         <View className="flex-row items-center justify-between mb-4">
                             <Text className="text-xl font-bold text-gray-900 text-right">الطلبات المعلقة</Text>
-                            {filteredOrders && filteredOrders.length > 0 && (
+                            {ordersData && ordersData.length > 0 && (
                                 <View className="bg-primary-100 px-3 py-1 rounded-full">
-                                    <Text className="text-primary-600 font-bold text-sm">{filteredOrders.length}</Text>
+                                    <Text className="text-primary-600 font-bold text-sm">{ordersData.length}</Text>
                                 </View>
                             )}
                         </View>
@@ -152,22 +131,35 @@ export default function DriverDashboardScreen() {
                                 <ActivityIndicator size="large" color="#E02020" />
                                 <Text className="text-gray-500 mt-4 text-right">جاري التحميل...</Text>
                             </View>
-                        ) : filteredOrders && filteredOrders.length > 0 ? (
-                            filteredOrders.slice(0, 3).map((order, index) => (
-                                <PendingOrderCard
-                                    key={order.id}
-                                    order={order}
-                                    index={index}
-                                    onAccept={handleAcceptOrder}
-                                    onReject={handleRejectOrder}
-                                />
-                            ))
+                        ) : ordersData && ordersData.length > 0 ? (
+                            <>
+                                {ordersData.slice(0, 3).map((order, index) => (
+                                    <PendingOrderCard
+                                        key={order.id}
+                                        order={order}
+                                        index={index}
+                                        onAccept={handleAcceptOrder}
+                                        onReject={handleRejectOrder}
+                                    />
+                                ))}
+                                {ordersData.length > 3 && (
+                                    <TouchableOpacity
+                                        className="mt-4 bg-primary-600 rounded-xl py-3 px-6 flex-row items-center justify-center gap-2"
+                                        onPress={() => router.push('/(driver)/(tabs)/orders')}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Text className="text-white font-bold text-base">عرض جميع الطلبات</Text>
+                                        <Ionicons name="arrow-forward" size={20} color="#ffffff" />
+                                    </TouchableOpacity>
+                                )}
+                            </>
                         ) : (
-                            <Animated.View entering={FadeInDown.duration(600)} className="py-12 items-center bg-white rounded-xl">
-                                <Ionicons name="receipt-outline" size={64} color="#d1d5db" />
-                                <Text className="text-gray-500 text-right mt-4">لا توجد طلبات معلقة حالياً</Text>
-                                <Text className="text-gray-400 text-sm text-right mt-2">ستظهر الطلبات الجديدة هنا</Text>
-                            </Animated.View>
+                            <PendingOrderCard
+                                order={{} as Order}
+                                index={0}
+                                onAccept={() => { }}
+                                onReject={() => { }}
+                            />
                         )}
                     </View>
                 )}

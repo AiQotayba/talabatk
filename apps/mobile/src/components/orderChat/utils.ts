@@ -30,7 +30,7 @@ export const getStatusColor = (status: string): string => {
 };
 
 export const formatOrderId = (id: string): string => {
-  return `طلب #${id.slice(0, 8)}`;
+  return `طلب #${id}`;
 };
 
 export const canCancelOrder = (order: Order, role: string): boolean => {

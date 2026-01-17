@@ -4,6 +4,7 @@ import { AuthenticatedRequest } from '../types/common.types';
 import prisma from '../config/database';
 import { Server } from 'socket.io';
 import path from 'path';
+import { UserRole } from '@prisma/client';
 
 export const sendMessage = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
@@ -18,7 +19,7 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response): Pro
 
     // Validate that either order_id or to_user is provided
     if (!order_id && !to_user) {
-      sendError(res, 'Either order_id or to_user is required', 400);
+      sendError(res, 'يجب توفير رقم الطلب أو معرف المستخدم. يرجى تحديد أحد الخيارين', 400);
       return;
     }
 
@@ -33,18 +34,26 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response): Pro
       });
 
       if (!order) {
-        sendError(res, 'Order not found', 404);
+        sendError(res, 'لم يتم العثور على الطلب. يرجى التحقق من رقم الطلب', 404);
         return;
       }
 
-      // Check if user is part of this order
-      if (order.client_id !== fromUserId && order.driver_id !== fromUserId) {
-        sendError(res, 'Access denied to this order', 403);
+      const userRole = req.user!.role;
+
+      // Check if user is part of this order or is admin
+      if (userRole !== UserRole.admin && order.client_id !== fromUserId && order.driver_id !== fromUserId) {
+        sendError(res, 'ليس لديك صلاحية لإرسال رسالة لهذا الطلب. يمكنك فقط إرسال الرسائل للطلبات الخاصة بك', 403);
         return;
       }
 
       // Set to_user based on order participants
-      if (order.client_id === fromUserId) {
+      // Admin can send to either client or driver, default to client if not specified
+      if (userRole === UserRole.admin) {
+        // If admin didn't specify to_user, send to client by default
+        if (!req.body.to_user) {
+          req.body.to_user = order.client_id;
+        }
+      } else if (order.client_id === fromUserId) {
         req.body.to_user = order.driver_id;
       } else {
         req.body.to_user = order.client_id;
@@ -99,10 +108,10 @@ export const sendMessage = async (req: AuthenticatedRequest, res: Response): Pro
       io.to(`user_${req.body.to_user}`).emit('message_received', message);
     }
 
-    sendSuccess(res, message, 'Message sent successfully', 201);
+    sendSuccess(res, message, 'تم إرسال الرسالة بنجاح!');
   } catch (error) {
     console.error('Send message error:', error);
-    sendError(res, 'Failed to send message', 500);
+    sendError(res, 'حدث خطأ أثناء إرسال الرسالة. يرجى المحاولة مرة أخرى', 500);
   }
 };
 
@@ -121,13 +130,15 @@ export const getOrderMessages = async (req: AuthenticatedRequest, res: Response)
     });
 
     if (!order) {
-      sendError(res, 'Order not found', 404);
+      sendError(res, 'لم يتم العثور على الطلب. يرجى التحقق من رقم الطلب', 404);
       return;
     }
 
-    // Check if user is part of this order
-    if (order.client_id !== userId && order.driver_id !== userId) {
-      sendError(res, 'Access denied to this order', 403);
+    const userRole = req.user!.role;
+
+    // Check if user is part of this order or is admin
+    if (userRole !== UserRole.admin && order.client_id !== userId && order.driver_id !== userId) {
+      sendError(res, 'ليس لديك صلاحية لعرض رسائل هذا الطلب. يمكنك فقط عرض رسائل طلباتك الخاصة', 403);
       return;
     }
 
@@ -153,10 +164,10 @@ export const getOrderMessages = async (req: AuthenticatedRequest, res: Response)
       orderBy: { created_at: 'asc' },
     });
 
-    sendSuccess(res, messages, 'Messages retrieved successfully');
+    sendSuccess(res, messages, 'تم تحميل الرسائل بنجاح');
   } catch (error) {
     console.error('Get order messages error:', error);
-    sendError(res, 'Failed to retrieve messages', 500);
+    sendError(res, 'حدث خطأ أثناء تحميل الرسائل. يرجى المحاولة مرة أخرى', 500);
   }
 };
 
@@ -171,13 +182,13 @@ export const markAsRead = async (req: AuthenticatedRequest, res: Response): Prom
     });
 
     if (!message) {
-      sendError(res, 'Message not found', 404);
+      sendError(res, 'لم يتم العثور على الرسالة. يرجى التحقق من رقم الرسالة', 404);
       return;
     }
 
     // Check if user is the recipient
     if (message.to_user !== userId) {
-      sendError(res, 'Access denied', 403);
+      sendError(res, 'ليس لديك صلاحية لتحديد هذه الرسالة كمقروءة. يمكنك فقط تحديد رسائلك الواردة', 403);
       return;
     }
 
@@ -203,25 +214,32 @@ export const markAsRead = async (req: AuthenticatedRequest, res: Response): Prom
       }
     });
 
-    sendSuccess(res, updatedMessage, 'Message marked as read');
+    sendSuccess(res, updatedMessage, 'تم تحديد الرسالة كمقروءة بنجاح');
   } catch (error) {
     console.error('Mark as read error:', error);
-    sendError(res, 'Failed to mark message as read', 500);
+    sendError(res, 'حدث خطأ أثناء تحديد الرسالة كمقروءة. يرجى المحاولة مرة أخرى', 500);
   }
 };
 
 export const uploadMessageImages = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
-      sendError(res, 'No images uploaded', 400);
+      sendError(res, 'لم يتم رفع أي صور. يرجى اختيار صورة واحدة على الأقل', 400);
       return;
     }
 
-    const imageUrls = req.files.map((file: Express.Multer.File) => `/uploads/messages/${file.filename}`);
+    // Get base URL from environment or construct from request
+    const baseUrl = process.env.API_BASE_URL || 
+      `${req.protocol}://${req.get('host')}`;
+    
+    const imageUrls = req.files.map((file: Express.Multer.File) => {
+      // Return full URL path
+      return `${baseUrl}/uploads/messages/${file.filename}`;
+    });
 
-    sendSuccess(res, { urls: imageUrls }, 'Images uploaded successfully');
+    sendSuccess(res, { urls: imageUrls }, 'تم رفع الصور بنجاح! يمكنك الآن إرسالها في الرسالة');
   } catch (error) {
     console.error('Upload message images error:', error);
-    sendError(res, 'Failed to upload images', 500);
+    sendError(res, 'حدث خطأ أثناء رفع الصور. يرجى التأكد من صحة الصور والمحاولة مرة أخرى', 500);
   }
 };

@@ -6,6 +6,7 @@ import { Order, Message } from '@/types/order.types';
 import { setCurrentOrder, updateOrder } from '@/store/slices/orders.slice';
 import { setMessages, addMessage } from '@/store/slices/messages.slice';
 import { OrderChatRole } from '../types';
+import { uploadImages } from '@/utils/imageUpload';
 
 interface UseOrderChatProps {
     orderId: string;
@@ -21,8 +22,8 @@ export const useOrderChat = ({ orderId, role }: UseOrderChatProps) => {
         queryKey: ['order', orderId],
         queryFn: () => apiClient.get(`/orders/${orderId}`).then(r => r.data),
         enabled: !!orderId,
-        refetchInterval: 5000, // تحديث كل 5 ثواني
-        staleTime: 4000, // اعتبر الداتا جديدة 4 ثواني فقط
+        refetchInterval: 10000, // تحديث كل 5 ثواني
+        staleTime: 20000, // اعتبر الداتا جديدة 4 ثواني فقط
     });
 
     // Fetch messages
@@ -33,8 +34,8 @@ export const useOrderChat = ({ orderId, role }: UseOrderChatProps) => {
             return response.data || [];
         },
         enabled: !!orderId,
-        refetchInterval: 5000, // تحديث كل 5 ثواني
-        staleTime: 4000, // اعتبر الداتا جديدة 4 ثواني فقط
+        // refetchInterval: 10000, // تحديث كل 5 ثواني
+        // staleTime: 20000, // اعتبر الداتا جديدة 4 ثواني فقط
     });
 
     // Update Redux store
@@ -63,31 +64,19 @@ export const useOrderChat = ({ orderId, role }: UseOrderChatProps) => {
                 // Add existing URLs
                 uploadedUrls = [...existingUrls];
 
-                // Upload local files
+                // Upload local files using the new storage API
                 if (filesToUpload.length > 0) {
-                    const formData = new FormData();
-                    filesToUpload.forEach((uri, index) => {
-                        const filename = uri.split('/').pop() || `image_${index}.jpg`;
-                        const match = /\.(\w+)$/.exec(filename);
-                        const type = match ? `image/${match[1]}` : 'image/jpeg';
-
-                        formData.append('message_images', {
-                            uri,
-                            type,
-                            name: filename,
-                        } as any);
-                    });
-
                     try {
-                        const uploadResponse = await apiClient.uploadFile<{ urls: string[] }>('/messages/upload-images', formData);
-                        // API returns { data: { urls: [...] } }
-                        const urls = (uploadResponse as any).data?.urls || [];
+                        const urls = await uploadImages(filesToUpload, 'messages');
                         if (urls.length > 0) {
                             uploadedUrls = [...uploadedUrls, ...urls];
+                        } else {
+                            console.warn('No URLs returned from upload');
                         }
-                    } catch (error) {
+                    } catch (error: any) {
                         console.error('Failed to upload images:', error);
-                        throw error;
+                        // Don't throw, allow message to be sent without images
+                        console.warn('Continuing without uploaded images');
                     }
                 }
             }
@@ -119,6 +108,59 @@ export const useOrderChat = ({ orderId, role }: UseOrderChatProps) => {
         },
     });
 
+    // Update order address mutation
+    const updateAddressMutation = useMutation({
+        mutationFn: async (addressId: string) => {
+            const response = await apiClient.put(`/orders/${orderId}/address`, {
+                dropoff_address_id: addressId,
+            });
+            return response.data;
+        },
+        onSuccess: (updatedOrder) => {
+            dispatch(updateOrder(updatedOrder));
+            queryClient.invalidateQueries({ queryKey: ['order', orderId] });
+        },
+    });
+
+    // Reactivate order mutation
+    const reactivateOrderMutation = useMutation({
+        mutationFn: async () => {
+            const response = await apiClient.post(`/orders/${orderId}/reactivate`);
+            return response.data;
+        },
+        onSuccess: (updatedOrder) => {
+            dispatch(updateOrder(updatedOrder));
+            queryClient.invalidateQueries({ queryKey: ['order', orderId] });
+            queryClient.invalidateQueries({ queryKey: ['messages', orderId] });
+        },
+    });
+
+    // Update order content mutation (admin only)
+    const updateContentMutation = useMutation({
+        mutationFn: async (content: string) => {
+            const response = await apiClient.put(`/orders/${orderId}/content`, { content });
+            return response.data;
+        },
+        onSuccess: (updatedOrder) => {
+            dispatch(updateOrder(updatedOrder));
+            queryClient.invalidateQueries({ queryKey: ['order', orderId] });
+            queryClient.invalidateQueries({ queryKey: ['messages', orderId] });
+        },
+    });
+
+    // Update order price mutation (admin only)
+    const updatePriceMutation = useMutation({
+        mutationFn: async (price: number) => {
+            const response = await apiClient.put(`/orders/${orderId}/price`, { price });
+            return response.data;
+        },
+        onSuccess: (updatedOrder) => {
+            dispatch(updateOrder(updatedOrder));
+            queryClient.invalidateQueries({ queryKey: ['order', orderId] });
+            queryClient.invalidateQueries({ queryKey: ['messages', orderId] });
+        },
+    });
+
     const orderMessages = messages[orderId] || [];
 
     return {
@@ -130,6 +172,10 @@ export const useOrderChat = ({ orderId, role }: UseOrderChatProps) => {
         role,
         sendMessage: (content: string, attachments?: string[]) => sendMessageMutation.mutate({ content, attachments }),
         updateOrderStatus: (status: string) => updateStatusMutation.mutate(status),
+        updateOrderAddress: (addressId: string) => updateAddressMutation.mutate(addressId),
+        reactivateOrder: () => reactivateOrderMutation.mutate(),
+        updateOrderContent: (content: string) => updateContentMutation.mutate(content),
+        updateOrderPrice: (price: number) => updatePriceMutation.mutate(price),
     };
 };
 

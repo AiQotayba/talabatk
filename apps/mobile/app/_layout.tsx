@@ -8,7 +8,9 @@ import { StatusBar } from 'expo-status-bar';
 import { store } from '@/store/store';
 import { loadAuthState } from '@/store/slices/auth.slice';
 import { useAppDispatch } from '@/store/hooks';
-import { ToastProvider } from '@/contexts/ToastContext';
+import Toast from 'react-native-toast-message';
+import toastConfig from '@/config/toast.config';
+import { SocketProvider } from '@/contexts/SocketContext';
 
 // Enable RTL by default
 if (!I18nManager.isRTL) {
@@ -51,9 +53,10 @@ export default function RootLayout() {
   return (
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
-        <ToastProvider>
+        <SocketProvider>
           <RootLayoutNav />
-        </ToastProvider>
+          <Toast config={toastConfig} />
+        </SocketProvider>
       </QueryClientProvider>
     </Provider>
   );

@@ -15,6 +15,8 @@ export default function AdminLayout() {
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="orders" />
             <Stack.Screen name="users" />
+            <Stack.Screen name="featured-orders" />
+            <Stack.Screen name="banners" />
             <Stack.Screen name="analytics" />
             <Stack.Screen name="notifications" />
             <Stack.Screen name="profile" />

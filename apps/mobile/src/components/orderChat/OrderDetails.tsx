@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, Image, ActivityIndicator } from 'react-native';
 import { AntDesign, Ionicons } from '@expo/vector-icons';
 import { Order } from '@/types/order.types';
 import { OrderChatRole } from './types';
@@ -7,6 +7,8 @@ import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import MapView, { Marker, UrlTile } from 'react-native-maps';
 import ContactCard from '../atoms/ContactCard';
 import Tabs from '../ui/tabs';
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '@/services/api/apiClient';
 
 interface OrderDetailsProps {
   order: Order;
@@ -15,6 +17,7 @@ interface OrderDetailsProps {
 
 export default function OrderDetails({ order, role }: OrderDetailsProps) {
   const [showFullDetails, setShowFullDetails] = useState(false);
+  const [showQRCode, setShowQRCode] = useState(false);
   const [activeTab, setActiveTab] = useState<'address' | 'contact'>('address');
 
   const formatPrice = (cents: number | null | undefined) => {
@@ -22,17 +25,94 @@ export default function OrderDetails({ order, role }: OrderDetailsProps) {
     return `${cents} ل.ت`;
   };
 
+  // Fetch QR code
+  const { data: qrCodeData, isLoading: isLoadingQR } = useQuery({
+    queryKey: ['order-qr-code', order.id],
+    queryFn: async () => {
+      const response = await apiClient.get<{ qr_code: string; order_code: string }>(`/orders/${order.id}/qr-code`);
+      return response.data;
+    },
+    enabled: showQRCode,
+  });
+
   return (
     <>
       <View className="bg-gray-50 m-4 px-4 py-3 rounded-xl shadow-md" style={{ direction: 'rtl' }}>
         <View className="flex-row items-start justify-between mb-3">
-          <TouchableOpacity onPress={() => setShowFullDetails(true)} activeOpacity={0.7}>
+          <TouchableOpacity onPress={() => setShowFullDetails(true)} activeOpacity={0.7} className="flex-1">
             <Text className="text-gray-700 text-sm font-thin text-start leading-6" numberOfLines={3}>{order.content || ''}</Text>
           </TouchableOpacity>
-          <AntDesign name="pushpin" size={20} color="#ddd" />
+          <View className="flex-row items-center gap-2">
+            {order.code_order && (
+              <TouchableOpacity
+                onPress={() => setShowQRCode(true)}
+                activeOpacity={0.7}
+                className="bg-primary-100 rounded-lg px-3 py-2"
+              >
+                <Ionicons name="qr-code" size={20} color="#E02020" />
+              </TouchableOpacity>
+            )}
+            <AntDesign name="pushpin" size={20} color="#ddd" />
+          </View>
         </View>
-
       </View>
+
+      {/* QR Code Modal */}
+      <Modal
+        visible={showQRCode}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowQRCode(false)}
+      >
+        <View className="flex-1 bg-black/50 items-center justify-center px-4">
+          <Animated.View
+            entering={FadeIn.duration(200)}
+            exiting={FadeOut.duration(150)}
+            className="bg-white rounded-2xl w-full max-w-sm shadow-xl p-6"
+            style={{ direction: 'rtl' }}
+          >
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-xl font-bold text-gray-900 text-start">رمز QR للطلب</Text>
+              <TouchableOpacity onPress={() => setShowQRCode(false)}>
+                <Ionicons name="close" size={24} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
+
+            {isLoadingQR ? (
+              <View className="py-12 items-center">
+                <ActivityIndicator size="large" color="#E02020" />
+                <Text className="text-gray-500 mt-4">جاري توليد رمز QR...</Text>
+              </View>
+            ) : qrCodeData ? (
+              <>
+                <View className="items-center mb-4">
+                  <Image
+                    source={{ uri: qrCodeData.qr_code }}
+                    className="w-64 h-64 rounded-lg"
+                    style={{ resizeMode: 'contain' }}
+                  />
+                </View>
+                <View className="bg-gray-50 rounded-lg p-3 mb-4">
+                  <Text className="text-sm text-gray-600 text-center mb-1">رمز الطلب</Text>
+                  <Text className="text-lg font-bold text-gray-900 text-center">{qrCodeData.order_code}</Text>
+                </View>
+                <TouchableOpacity
+                  className="bg-primary-600 rounded-xl py-3"
+                  onPress={() => setShowQRCode(false)}
+                  activeOpacity={0.8}
+                >
+                  <Text className="text-white font-bold text-center">إغلاق</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <View className="py-12 items-center">
+                <Ionicons name="alert-circle-outline" size={64} color="#d1d5db" />
+                <Text className="text-gray-500 mt-4">فشل توليد رمز QR</Text>
+              </View>
+            )}
+          </Animated.View>
+        </View>
+      </Modal>
 
       {/* Full Details Modal */}
       <Modal

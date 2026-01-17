@@ -17,7 +17,9 @@ export interface OrderAction {
   color: string;
   bgColor: string;
   visible: boolean;
-  onPress: () => void;
+  onPress?: any
+  role: OrderChatRole[];
+  condition?: any;
 }
 
 export interface OrderChatContextType {

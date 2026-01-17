@@ -43,7 +43,7 @@ export default function PendingOrderCard({ order, index, onAccept, onReject }: P
                             <View className="flex-row justify-between items-center gap-2 mb-2">
                                 <View className="flex-row items-center gap-2">
                                     <Ionicons name="receipt-outline" size={20} color="#E02020" />
-                                    <Text className="font-bold text-gray-900 text-base">طلب #{order.code_order || order.id.slice(0, 8)}</Text>
+                                    <Text className="font-bold text-gray-900 text-base">طلب #{order.code_order || order.id?.slice(0, 8)}</Text>
                                 </View>
 
                                 <TimeHistory

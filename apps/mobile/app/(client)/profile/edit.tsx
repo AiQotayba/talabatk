@@ -1,23 +1,22 @@
-import { useState } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Image, Platform } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
-import * as ImagePicker from 'expo-image-picker';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { updateProfile } from '@/store/slices/auth.slice';
 import { apiClient } from '@/services/api/apiClient';
-import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Header from '@/components/ui/header';
-import { useToast } from '@/contexts/ToastContext';
+import ImageUploadInput from '@/components/ui/ImageUploadInput';
+import { Toast } from '@/utils/toast';
 
 const profileSchema = z.object({
   name: z.string().min(2, 'الاسم يجب أن يكون على الأقل حرفين'),
   email: z.string().email('البريد الإلكتروني غير صحيح'),
   phone: z.string().min(10, 'رقم الهاتف غير صحيح'),
+  profile_photo_url: z.string().optional(),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -26,9 +25,6 @@ export default function EditProfileScreen() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
-  const { showSuccess, showError } = useToast();
-  const [profilePhoto, setProfilePhoto] = useState<string | null>(user?.profile_photo_url || null);
-  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
   const {
     control,
@@ -40,12 +36,26 @@ export default function EditProfileScreen() {
       name: user?.name || '',
       email: user?.email || '',
       phone: user?.phone || '',
+      profile_photo_url: user?.profile_photo_url || '',
     },
   });
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: ProfileFormData) => {
-      const response = await apiClient.put('/users/profile', data);
+      // Update profile with all data including profile_photo_url
+      // Only send profile_photo_url if it's a URL (not a local file)
+      const updateData: any = {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+      };
+      
+      // Only include profile_photo_url if it's already uploaded (starts with http)
+      if (data.profile_photo_url && !data.profile_photo_url.startsWith('file://')) {
+        updateData.profile_photo_url = data.profile_photo_url;
+      }
+      
+      const response = await apiClient.put('/users/profile', updateData);
       return response.data;
     },
     onSuccess: (data) => {
@@ -53,126 +63,31 @@ export default function EditProfileScreen() {
       if (data.user) {
         dispatch(updateProfile(data.user));
       }
-      showSuccess('تم تحديث الملف الشخصي بنجاح');
+      Toast.success('تم التحديث بنجاح', 'تم تحديث الملف الشخصي بنجاح!');
       router.back();
     },
     onError: (error: any) => {
-      showError(error.message || 'فشل تحديث الملف الشخصي');
+      Toast.error('فشل التحديث', error.message || 'حدث خطأ أثناء تحديث الملف الشخصي. يرجى المحاولة مرة أخرى');
     },
   });
-
-  const uploadPhotoMutation = useMutation({
-    mutationFn: async (uri: string) => {
-      const formData = new FormData();
-      const filename = uri.split('/').pop() || 'photo.jpg';
-      const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `image/${match[1]}` : 'image/jpeg';
-
-      // For React Native, FormData needs this specific format
-      formData.append('profile_photo', {
-        uri,
-        name: filename,
-        type,
-      } as any);
-
-      const response = await apiClient.uploadFile('/users/profile-photo', formData);
-      return response.data;
-    },
-    onSuccess: (data) => {
-      if (data.user) {
-        dispatch(updateProfile(data.user));
-        setProfilePhoto(data.user.profile_photo_url || null);
-      }
-      showSuccess('تم تحديث الصورة الشخصية بنجاح');
-      setIsUploadingPhoto(false);
-    },
-    onError: (error: any) => {
-      showError(error.message || 'فشل رفع الصورة');
-      setIsUploadingPhoto(false);
-    },
-  });
-
-  const pickImage = async () => {
-    try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        showError('يجب منح إذن الوصول إلى الصور');
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        // @ts-ignore - MediaTypeOptions is deprecated but still works in this version
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.8,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        setIsUploadingPhoto(true);
-        uploadPhotoMutation.mutate(result.assets[0].uri);
-      }
-    } catch (error: any) {
-      showError(error.message || 'فشل اختيار الصورة');
-      setIsUploadingPhoto(false);
-    }
-  };
 
   const onSubmit = (data: ProfileFormData) => {
     updateProfileMutation.mutate(data);
   };
 
   return (
-    <ScrollView className="flex-1 bg-gray-50" showsVerticalScrollIndicator={false} style={{ direction: 'rtl' }}>
+    <ScrollView className="flex-1 bg-gray-50 mt-8" showsVerticalScrollIndicator={false} style={{ direction: 'rtl' }}>
       <Header title="تعديل الملف الشخصي" />
 
       <View className="px-6 py-8">
         <Animated.View entering={FadeInDown.duration(600)} className="items-center mb-8">
-          <TouchableOpacity
-            onPress={pickImage}
-            disabled={isUploadingPhoto}
-            activeOpacity={0.7}
-            className="relative"
-          >
-            <View
-              className="w-32 h-32 bg-primary-100 rounded-full items-center justify-center"
-              style={{
-                shadowColor: '#E02020',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.1,
-                shadowRadius: 8,
-                elevation: 4,
-              }}
-            >
-              {profilePhoto ? (
-                <Image
-                  source={{ uri: profilePhoto }}
-                  className="w-32 h-32 rounded-full"
-                  resizeMode="cover"
-                />
-              ) : (
-                <Ionicons name="person" size={64} color="#E02020" />
-              )}
-              {isUploadingPhoto && (
-                <View className="absolute inset-0 bg-black/50 rounded-full items-center justify-center">
-                  <ActivityIndicator color="white" />
-                </View>
-              )}
-            </View>
-            <View
-              className="absolute bottom-0 right-0 bg-primary-600 rounded-full p-2"
-              style={{
-                shadowColor: '#E02020',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.3,
-                shadowRadius: 4,
-                elevation: 4,
-              }}
-            >
-              <Ionicons name="camera" size={20} color="white" />
-            </View>
-          </TouchableOpacity>
-          <Text className="text-gray-600 text-sm mt-4 text-start">اضغط لتغيير الصورة الشخصية</Text>
+          <ImageUploadInput
+            name="profile_photo_url"
+            control={control}
+            variant="profile"
+            folder="profiles"
+            helperText="اضغط لتغيير الصورة الشخصية"
+          />
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(600).delay(100)}>
@@ -254,7 +169,7 @@ export default function EditProfileScreen() {
           <TouchableOpacity
             className="bg-primary-600 rounded-xl py-4"
             onPress={handleSubmit(onSubmit)}
-            disabled={updateProfileMutation.isPending || isUploadingPhoto}
+            disabled={updateProfileMutation.isPending}
             activeOpacity={0.8}
             style={{
               shadowColor: '#E02020',

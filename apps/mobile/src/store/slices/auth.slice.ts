@@ -41,7 +41,6 @@ export const login = createAsyncThunk(
   async (credentials: LoginRequest, { rejectWithValue }) => {
     try {
       const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
-      console.log(response);
       const { access_token, refresh_token, user } = (response.data as AuthResponse) || response;
       // Store tokens and user data
       await Promise.all([

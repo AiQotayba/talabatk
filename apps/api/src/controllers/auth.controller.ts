@@ -21,7 +21,7 @@ export const register = async (req: AuthenticatedRequest, res: Response): Promis
     });
 
     if (existingUser) {
-      sendError(res, 'User with this email or phone already exists', 400);
+      sendError(res, 'البريد الإلكتروني أو رقم الهاتف مسجل مسبقاً. يرجى تسجيل الدخول أو استخدام بيانات أخرى', 400);
       return;
     }
 
@@ -56,10 +56,10 @@ export const register = async (req: AuthenticatedRequest, res: Response): Promis
       access_token: accessToken,
       refresh_token: refreshToken,
       user
-    }, 'User registered successfully', 201);
+    }, 'تم إنشاء حسابك بنجاح! يمكنك الآن البدء في استخدام التطبيق', 201);
   } catch (error) {
     console.error('Registration error:', error);
-    sendError(res, 'Registration failed', 500);
+    sendError(res, 'حدث خطأ أثناء إنشاء الحساب. يرجى المحاولة مرة أخرى أو التواصل مع الدعم الفني', 500);
   }
 };
 
@@ -71,16 +71,15 @@ export const login = async (req: AuthenticatedRequest, res: Response): Promise<v
     const user = await prisma.user.findUnique({
       where: { email }
     });
-
     if (!user || !user.hashed_password) {
-      sendError(res, 'Invalid credentials', 401);
+      sendError(res, 'البريد الإلكتروني أو كلمة المرور غير صحيحة. يرجى التحقق من بياناتك والمحاولة مرة أخرى', 401);
       return;
     }
 
     // Verify password
     const isValidPassword = await comparePassword(password, user.hashed_password);
     if (!isValidPassword) {
-      sendError(res, 'Invalid credentials', 401);
+      sendError(res, 'البريد الإلكتروني أو كلمة المرور غير صحيحة. يرجى التحقق من بياناتك والمحاولة مرة أخرى', 401);
       return;
     }
 
@@ -99,10 +98,10 @@ export const login = async (req: AuthenticatedRequest, res: Response): Promise<v
         role: user.role,
         profile_photo_url: user.profile_photo_url,
       }
-    }, 'Login successful');
+    }, 'تم تسجيل الدخول بنجاح! مرحباً بك في التطبيق');
   } catch (error) {
     console.error('Login error:', error);
-    sendError(res, 'Login failed', 500);
+    sendError(res, 'حدث خطأ أثناء تسجيل الدخول. يرجى المحاولة مرة أخرى أو التواصل مع الدعم الفني', 500);
   }
 };
 
@@ -111,7 +110,7 @@ export const refreshToken = async (req: AuthenticatedRequest, res: Response): Pr
     const { refresh_token }: RefreshTokenRequest = req.body;
 
     if (!refresh_token) {
-      sendError(res, 'Refresh token required', 400);
+      sendError(res, 'يجب توفير رمز التحديث. يرجى تسجيل الدخول مرة أخرى', 400);
       return;
     }
 
@@ -133,7 +132,7 @@ export const refreshToken = async (req: AuthenticatedRequest, res: Response): Pr
     });
 
     if (!user) {
-      sendError(res, 'Invalid refresh token', 401);
+      sendError(res, 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى', 401);
       return;
     }
 
@@ -143,9 +142,9 @@ export const refreshToken = async (req: AuthenticatedRequest, res: Response): Pr
     sendSuccess(res, {
       access_token: newAccessToken,
       user
-    }, 'Token refreshed successfully');
+    }, 'تم تحديث الجلسة بنجاح. يمكنك متابعة استخدام التطبيق');
   } catch (error) {
     console.error('Token refresh error:', error);
-    sendError(res, 'Invalid refresh token', 401);
+    sendError(res, 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى', 401);
   }
 };

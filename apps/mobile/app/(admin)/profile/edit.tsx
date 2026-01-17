@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAppSelector } from '@/store/hooks';
 import { apiClient } from '@/services/api/apiClient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useToast } from '@/contexts/ToastContext';
+import { Toast } from '@/utils/toast';
 import Header from '@/components/ui/header';
 
 interface ProfileFormData {
@@ -19,7 +19,6 @@ export default function AdminEditProfileScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user } = useAppSelector((state) => state.auth);
-  const { showSuccess, showError } = useToast();
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['admin-profile'],
@@ -54,11 +53,11 @@ export default function AdminEditProfileScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-profile'] });
-      showSuccess('تم تحديث الملف الشخصي بنجاح');
+      Toast.success('تم التحديث بنجاح', 'تم تحديث الملف الشخصي بنجاح!');
       router.back();
     },
     onError: (error: any) => {
-      showError(error.message || 'فشل تحديث الملف الشخصي');
+      Toast.error('فشل التحديث', error.message || 'حدث خطأ أثناء تحديث الملف الشخصي. يرجى المحاولة مرة أخرى');
     },
   });
 
@@ -72,7 +71,7 @@ export default function AdminEditProfileScreen() {
 
   return (
     <ScrollView className="flex-1 bg-gray-50 mt-8" showsVerticalScrollIndicator={false} style={{ direction: 'rtl' }}>
-      <Header title="تعديل الملف الشخصي" description="تعديل الملف الشخصي" />
+      <Header title="تعديل الملف الشخصي" description="قم بتحديث معلوماتك الشخصية" />
 
       <View className="px-6 py-4">
         <Animated.View entering={FadeInDown.duration(600)}>

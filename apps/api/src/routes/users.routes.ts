@@ -7,7 +7,9 @@ import {
     createAddress,
     updateAddress,
     deleteAddress,
-    getAddress
+    getAddress,
+    getFeaturedOrders,
+    getBannersUser
 } from '../controllers/users.controller';
 import { authenticateToken } from '../middleware/auth.middleware';
 import { validate, validateParams } from '../middleware/validation.middleware';
@@ -56,15 +58,24 @@ const addressIdSchema = Joi.object({
 });
 
 // Profile routes
-router.get('/profile', getProfile as any);
-router.put('/profile', validate(updateProfileSchema), updateProfile as any);
+router.route('/profile')
+    .get(getProfile as any)
+    .put(validate(updateProfileSchema), updateProfile as any)
 router.post('/profile-photo', uploadMiddleware, uploadProfilePhoto as any);
 
 // Address routes
-router.get('/addresses', getAddresses as any);
-router.post('/addresses', validate(createAddressSchema), createAddress as any);
-router.get('/addresses/:id', validateParams(addressIdSchema), getAddress as any);
-router.put('/addresses/:id', validateParams(addressIdSchema), validate(updateAddressSchema), updateAddress as any);
-router.delete('/addresses/:id', validateParams(addressIdSchema), deleteAddress as any);
+router.route('/addresses')
+    .get(getAddresses as any)
+    .post(validate(createAddressSchema), createAddress as any);
+router.route('/addresses/:id')
+    .get(validateParams(addressIdSchema), getAddress as any)
+    .put(validateParams(addressIdSchema), validate(updateAddressSchema), updateAddress as any)
+    .delete(validateParams(addressIdSchema), deleteAddress as any);
+
+// Featured Orders route
+router.get('/featured-order', getFeaturedOrders as any);
+
+// Banners route
+router.get('/banners', getBannersUser as any);
 
 export default router;

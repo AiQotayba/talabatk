@@ -16,7 +16,7 @@ export const createRating = async (req: AuthenticatedRequest, res: Response): Pr
 
     // Validate score
     if (score < 1 || score > 5) {
-      sendError(res, 'Score must be between 1 and 5', 400);
+      sendError(res, 'يجب أن يكون التقييم بين 1 و 5. يرجى اختيار تقييم صحيح', 400);
       return;
     }
 
@@ -30,22 +30,22 @@ export const createRating = async (req: AuthenticatedRequest, res: Response): Pr
     });
 
     if (!order) {
-      sendError(res, 'Order not found', 404);
+      sendError(res, 'لم يتم العثور على الطلب. يرجى التحقق من رقم الطلب', 404);
       return;
     }
 
     if (order.client_id !== clientId) {
-      sendError(res, 'Access denied', 403);
+      sendError(res, 'ليس لديك صلاحية لتقييم هذا الطلب. يمكنك فقط تقييم طلباتك الخاصة', 403);
       return;
     }
 
     if (order.driver_id !== driver_id) {
-      sendError(res, 'Driver does not match order', 400);
+      sendError(res, 'السائق المحدد لا يطابق سائق الطلب. يرجى التحقق من بيانات التقييم', 400);
       return;
     }
 
     if (order.status !== OrderStatus.delivered) {
-      sendError(res, 'Can only rate delivered orders', 400);
+      sendError(res, 'يمكنك فقط تقييم الطلبات المكتملة. يرجى انتظار اكتمال الطلب', 400);
       return;
     }
 
@@ -58,7 +58,7 @@ export const createRating = async (req: AuthenticatedRequest, res: Response): Pr
     });
 
     if (existingRating) {
-      sendError(res, 'Order has already been rated', 400);
+      sendError(res, 'تم تقييم هذا الطلب مسبقاً. يمكنك تقييم كل طلب مرة واحدة فقط', 400);
       return;
     }
 
@@ -94,10 +94,10 @@ export const createRating = async (req: AuthenticatedRequest, res: Response): Pr
       }
     });
 
-    sendSuccess(res, rating, 'Rating created successfully', 201);
+    sendSuccess(res, rating, 'تم إرسال التقييم بنجاح! شكراً لمساهمتك في تحسين الخدمة');
   } catch (error) {
     console.error('Create rating error:', error);
-    sendError(res, 'Failed to create rating', 500);
+    sendError(res, 'حدث خطأ أثناء إرسال التقييم. يرجى المحاولة مرة أخرى', 500);
   }
 };
 
@@ -147,9 +147,9 @@ export const getDriverRatings = async (req: AuthenticatedRequest, res: Response)
     sendSuccess(res, {
       ratings,
       stats: ratingStats,
-    }, 'Driver ratings retrieved successfully');
+    }, 'تم تحميل تقييمات السائق بنجاح');
   } catch (error) {
     console.error('Get driver ratings error:', error);
-    sendError(res, 'Failed to retrieve driver ratings', 500);
+    sendError(res, 'حدث خطأ أثناء تحميل تقييمات السائق. يرجى المحاولة مرة أخرى', 500);
   }
 };

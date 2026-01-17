@@ -4,15 +4,17 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Message } from '@/types/message.types';
 import MessageBubble from './MessageBubble';
 import { useEffect, useRef } from 'react';
+import { Order } from '@/types/order.types';
 
 interface MessagesListProps {
   messages: Message[];
   currentUserId?: string;
   isLoading: boolean;
   scrollViewRef?: React.RefObject<ScrollView>;
+  order?: Order;
 }
 
-export default function MessagesList({ messages, currentUserId, isLoading, scrollViewRef }: MessagesListProps) {
+export default function MessagesList({ messages, currentUserId, isLoading, scrollViewRef, order }: MessagesListProps) {
   const internalScrollRef = useRef<ScrollView>(null);
   const scrollRef = scrollViewRef || internalScrollRef;
 
@@ -43,14 +45,17 @@ export default function MessagesList({ messages, currentUserId, isLoading, scrol
         scrollRef.current?.scrollToEnd({ animated: true });
       }}
     >
-      {messages.map((message, index) => (
-        <MessageBubble
-          key={message.id}
-          message={message}
-          isMyMessage={message.from_user === currentUserId}
-          index={index}
-        />
-      ))}
+      {messages.map((message, index) => {
+        return (
+          <MessageBubble
+            key={message.id}
+            message={message}
+            isMyMessage={message.from_user === currentUserId}
+            index={index}
+            order={order}
+          />
+        );
+      })}
       {messages.length === 0 && !isLoading && (
         <Animated.View entering={FadeInDown.duration(600)} className="items-center py-12">
           <Ionicons name="chatbubbles-outline" size={64} color="#d1d5db" />

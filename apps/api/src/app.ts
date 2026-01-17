@@ -24,6 +24,7 @@ import messagesRoutes from './routes/messages.routes';
 import ratingsRoutes from './routes/ratings.routes';
 import complaintsRoutes from './routes/complaints.routes';
 import adminRoutes from './routes/admin.routes';
+import storageRoutes from './routes/storage.routes';
 
 // Import socket handlers
 import { setupSocketHandlers } from './socket/socket.handlers';
@@ -119,9 +120,29 @@ app.use('/api/messages', messagesRoutes);
 app.use('/api/ratings', ratingsRoutes);
 app.use('/api/complaints', complaintsRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/storage', storageRoutes);
 
 // Serve uploaded files
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Use absolute path to ensure it works after compilation
+const uploadsPath = process.env.UPLOAD_PATH
+  ? (path.isAbsolute(process.env.UPLOAD_PATH)
+    ? process.env.UPLOAD_PATH
+    : path.resolve(process.cwd(), process.env.UPLOAD_PATH))
+  : path.resolve(process.cwd(), 'storage');
+
+// Serve files from /uploads (legacy support)
+app.use('/uploads', express.static(uploadsPath, {
+  maxAge: '1y', // Cache for 1 year
+  etag: true,
+  lastModified: true,
+}));
+
+// Serve files from /storage (current standard)
+app.use('/storage', express.static(uploadsPath, {
+  maxAge: '1y', // Cache for 1 year
+  etag: true,
+  lastModified: true,
+}));
 
 // Error handling
 app.use(notFoundHandler);
@@ -133,9 +154,8 @@ setupSocketHandlers(io);
 // Start server
 const PORT = appConfig.port;
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📱 Environment: ${appConfig.nodeEnv}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+  console.log(`📱 ${appConfig.nodeEnv} - 🌱 http://localhost:${PORT}/health`);
+  console.log(`📂 Docs available at: http://localhost:${PORT}/api/docs`);
 });
 
 export default app;

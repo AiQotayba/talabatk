@@ -14,7 +14,7 @@ export const validate = (schema: Joi.ObjectSchema) => {
     
     if (error) {
       const errorMessage = error.details.map(detail => detail.message).join(', ');
-      sendError(res, `Validation error: ${errorMessage}`, 400);
+      sendError(res, `البيانات المدخلة غير صحيحة: ${errorMessage}. يرجى التحقق من جميع الحقول والمحاولة مرة أخرى`, 400);
       return;
     }
     
@@ -38,7 +38,7 @@ export const validateQuery = (schema: Joi.ObjectSchema) => {
     
     if (error) {
       const errorMessage = error.details.map(detail => detail.message).join(', ');
-      sendError(res, `Query validation error: ${errorMessage}`, 400);
+      sendError(res, `معاملات البحث غير صحيحة: ${errorMessage}. يرجى التحقق من المعاملات والمحاولة مرة أخرى`, 400);
       return;
     }
     
@@ -61,7 +61,7 @@ export const validateParams = (schema: Joi.ObjectSchema) => {
     
     if (error) {
       const errorMessage = error.details.map(detail => detail.message).join(', ');
-      sendError(res, `Parameter validation error: ${errorMessage}`, 400);
+      sendError(res, `المعاملات غير صحيحة: ${errorMessage}. يرجى التحقق من المعاملات والمحاولة مرة أخرى`, 400);
       return;
     }
     

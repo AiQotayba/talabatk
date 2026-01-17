@@ -587,7 +587,6 @@ app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(specs));
 import morgan from 'morgan';
 
 app.use(morgan('combined'));
-console.log('Order created:', orderId);
 console.error('Error:', error.message);
 ```
 
@@ -720,7 +719,6 @@ app.use(errorHandler);
 
 // Socket.io setup
 io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
   
   socket.on('join_order_room', (orderId) => {
     socket.join(`order_${orderId}`);
@@ -733,7 +731,6 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
 });
 ```
 

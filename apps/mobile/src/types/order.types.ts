@@ -66,3 +66,13 @@ export interface Message {
   content: string;
   created_at: string;
 }
+
+export interface FeaturedOrder {
+  id: string;
+  context: string;
+  start_date: string;
+  end_date: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}

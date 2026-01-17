@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -7,41 +8,32 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import OrderCard from '@/components/order/order-card';
 import Header from '@/components/ui/header';
+import Tabs, { TabItem } from '@/components/ui/tabs';
 
-const getStatusText = (status: string) => {
-  const statusMap: Record<string, string> = {
-    pending: 'قيد الانتظار',
-    assigned: 'تم التعيين',
-    in_progress: 'قيد التنفيذ',
-    delivered: 'تم التسليم',
-    cancelled: 'ملغي',
-    failed: 'فشل',
-  };
-  return statusMap[status] || status;
-};
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'delivered':
-      return 'bg-success-100 text-success-700';
-    case 'cancelled':
-    case 'failed':
-      return 'bg-error-100 text-error-700';
-    case 'pending':
-    case 'assigned':
-      return 'bg-warning-100 text-warning-700';
-    default:
-      return 'bg-primary-100 text-primary-700';
-  }
-};
+const ORDER_STATUS_TABS: TabItem[] = [
+  { id: 'all', label: 'الكل', icon: 'list' },
+  { id: 'pending', label: 'معلقة', icon: 'time' },
+  { id: 'assigned', label: 'معينة', icon: 'person-add' },
+  { id: 'accepted', label: 'مقبولة', icon: 'checkmark-circle' },
+  { id: 'in_transit', label: 'قيد التوصيل', icon: 'car' },
+  { id: 'delivered', label: 'مكتملة', icon: 'checkmark-done-circle' },
+  { id: 'cancelled', label: 'ملغاة', icon: 'close-circle' },
+];
 
 export default function ClientOrdersScreen() {
   const router = useRouter();
+  const [activeFilter, setActiveFilter] = useState<string>('all');
 
   const { data: ordersData, isLoading, refetch } = useQuery({
-    queryKey: ['client-orders'],
+    queryKey: ['client-orders', activeFilter],
     queryFn: async () => {
-      const response = await apiClient.get<Order[]>('/orders/client/history');
+      const params: any = {};
+      if (activeFilter !== 'all') {
+        params.status = activeFilter;
+      }
+      const queryString = new URLSearchParams(params).toString();
+      const response = await apiClient.get<Order[]>(`/orders/client/history${queryString ? `?${queryString}` : ''}`);
       return response.data || [];
     },
   });
@@ -57,6 +49,16 @@ export default function ClientOrdersScreen() {
         style={{ direction: 'rtl' }}
       >
         <View className="px-6 py-4" style={{ direction: 'rtl' }}>
+          {/* Filter Tabs */}
+          <View className="mb-4">
+            <Tabs
+              tabs={ORDER_STATUS_TABS}
+              activeTab={activeFilter}
+              onTabChange={setActiveFilter}
+              scrollable={true}
+            />
+          </View>
+
           {isLoading ? (
             <View className="py-12 items-center">
               <ActivityIndicator size="large" color="#E02020" />

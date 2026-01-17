@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { 
+import {
   getAllOrders,
   getAllDrivers,
   updateDriver,
@@ -8,7 +8,18 @@ import {
   getDashboardStats,
   getAllUsers,
   getUserById,
-  getMap
+  getMap,
+  getMapDrivers,
+  createFeaturedOrder,
+  getFeaturedOrders,
+  getFeaturedOrderById,
+  updateFeaturedOrder,
+  deleteFeaturedOrder,
+  createBanner,
+  getBanners,
+  getBannerById,
+  updateBanner,
+  deleteBanner
 } from '../controllers/admin.controller';
 import { authenticateToken, requireAdmin } from '../middleware/auth.middleware';
 import { validate, validateParams, validateQuery } from '../middleware/validation.middleware';
@@ -65,6 +76,54 @@ const mapQuerySchema = Joi.object({
   status: Joi.string().valid('all', 'pending', 'assigned', 'in_progress', 'delivered', 'cancelled').optional(),
 });
 
+const featuredOrderSchema = Joi.object({
+  context: Joi.string().required(),
+  start_date: Joi.date().iso().required(),
+  end_date: Joi.date().iso().required(),
+  is_active: Joi.boolean().optional(),
+});
+
+const updateFeaturedOrderSchema = Joi.object({
+  context: Joi.string().optional(),
+  start_date: Joi.date().iso().optional(),
+  end_date: Joi.date().iso().optional(),
+  is_active: Joi.boolean().optional(),
+});
+
+const featuredOrderIdSchema = Joi.object({
+  id: Joi.string().uuid().required(),
+});
+
+const featuredOrdersQuerySchema = Joi.object({
+  page: Joi.number().integer().min(1).optional(),
+  limit: Joi.number().integer().min(1).max(100).optional(),
+  is_active: Joi.boolean().optional(),
+});
+
+const bannerSchema = Joi.object({
+  title: Joi.string().max(200).optional(),
+  image_url: Joi.string().uri().required(),
+  link: Joi.string().uri().optional(),
+  order_index: Joi.number().integer().min(0).optional(),
+  is_active: Joi.boolean().optional(),
+});
+
+const updateBannerSchema = Joi.object({
+  title: Joi.string().max(200).optional(),
+  image_url: Joi.string().uri().optional(),
+  link: Joi.string().uri().optional(),
+  order_index: Joi.number().integer().min(0).optional(),
+  is_active: Joi.boolean().optional(),
+});
+
+const bannerIdSchema = Joi.object({
+  id: Joi.string().uuid().required(),
+});
+
+const bannersQuerySchema = Joi.object({
+  is_active: Joi.boolean().optional(),
+});
+
 // Admin routes
 router.get('/dashboard/stats', getDashboardStats as any);
 router.get('/orders', validateQuery(ordersQuerySchema), getAllOrders as any);
@@ -75,5 +134,26 @@ router.put('/drivers/:id', validateParams(driverIdSchema), validate(updateDriver
 router.get('/analytics', validateQuery(analyticsQuerySchema), getAnalytics as any);
 router.get('/complaints', validateQuery(complaintsQuerySchema), getComplaints as any);
 router.get('/map', validateQuery(mapQuerySchema), getMap as any);
+router.get('/map/drivers', getMapDrivers as any);
+
+// Featured Orders routes
+router.route('/featured-order')
+  .post(validate(featuredOrderSchema), createFeaturedOrder as any)
+  .get(validateQuery(featuredOrdersQuerySchema), getFeaturedOrders as any)
+
+router.route('/featured-order/:id')
+  .get(validateParams(featuredOrderIdSchema), getFeaturedOrderById as any)
+  .put(validateParams(featuredOrderIdSchema), validate(updateFeaturedOrderSchema), updateFeaturedOrder as any)
+  .delete(validateParams(featuredOrderIdSchema), deleteFeaturedOrder as any);
+
+// Banners routes
+router.route('/banner')
+  .post(validate(bannerSchema), createBanner as any)
+  .get(validateQuery(bannersQuerySchema), getBanners as any)
+
+router.route('/banner/:id')
+  .get(validateParams(bannerIdSchema), getBannerById as any)
+  .put(validateParams(bannerIdSchema), validate(updateBannerSchema), updateBanner as any)
+  .delete(validateParams(bannerIdSchema), deleteBanner as any);
 
 export default router;

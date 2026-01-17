@@ -2,6 +2,7 @@ import { Server } from 'socket.io';
 import { AuthenticatedSocket } from './socket.middleware';
 import { authenticateSocket } from './socket.middleware';
 import prisma from '../config/database';
+import { UserRole } from '@prisma/client';
 
 export const setupSocketHandlers = (io: Server): void => {
   // Apply authentication middleware
@@ -60,7 +61,7 @@ export const setupSocketHandlers = (io: Server): void => {
     }) => {
       try {
         // Verify access to order
-        const hasAccess = await verifyOrderAccess(socket.userId!, data.orderId);
+        const hasAccess = await verifyOrderAccess(socket.userId!, data.orderId, socket.userRole);
         if (!hasAccess) {
           socket.emit('error', { message: 'Access denied to this order' });
           return;
@@ -80,7 +81,16 @@ export const setupSocketHandlers = (io: Server): void => {
           return;
         }
 
-        const toUserId = order.client_id === socket.userId ? order.driver_id : order.client_id;
+        // Determine recipient: admin sends to client by default, others send to the other party
+        let toUserId: string | null;
+        if (socket.userRole === UserRole.admin) {
+          // Admin sends to client by default
+          toUserId = order.client_id;
+        } else if (order.client_id === socket.userId) {
+          toUserId = order.driver_id;
+        } else {
+          toUserId = order.client_id;
+        }
 
         // Create message in database
         const message = await prisma.message.create({
@@ -219,8 +229,13 @@ export const setupSocketHandlers = (io: Server): void => {
 };
 
 // Helper function to verify order access
-const verifyOrderAccess = async (userId: string, orderId: string): Promise<boolean> => {
+const verifyOrderAccess = async (userId: string, orderId: string, userRole?: string): Promise<boolean> => {
   try {
+    // Admin has access to all orders
+    if (userRole === UserRole.admin) {
+      return true;
+    }
+
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       select: {

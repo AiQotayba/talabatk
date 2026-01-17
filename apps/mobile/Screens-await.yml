@@ -2,31 +2,25 @@
 - (auth): 
     - Forgot Password
     - Verify Email 
-- (Client):
-    - home 
-        @OrderAds
-    - notifications
+- (Client): 
     - orders  
         - [id]/Group
             @Messages  # [image, audio]
             @StatusOrder  # [pending, accepted, rejected, in_progress, delivered, cancelled]
-            @Address  # [create, select, live GPS]
-            @Complaints  # [message, image] 
+            @Address  # [live GPS] 
             @ProofOfDelivery  # [QRScan, signature, confirmButton] 
     - profile: 
         @ChangePassword 
 - (Worker):
     - home
         @LastOrders # [listLastThreeOrders, ToChat]
-            @FilterOrders # [filterByStatus, filterByDate, filterByClientName]
-    - notifications
+            @FilterOrders # [filterByStatus, filterByDate, filterByClientName] 
     - profile 
         @ChangePassword
         @feedback # [message, image]
     - orders
         @listOrders
-        - [id]/Group
-            @OrderDetails # [allOrderDetails, UserDetails]
+        - [id]/Group 
             @Messages # [message, image, audio]
             @ClientMap # [live GPS, defaultAddress]
             @StatusOrderUpdate # [pending, accepted, rejected, in_progress, delivered, cancelled]
@@ -34,16 +28,5 @@
             @Complaints # [message, image]
             # @StatusOrder # [pending, accepted, rejected, in_progress, delivered, cancelled]
 - (Admin): reUX
-    - home: 
-        @Finance # [finance]
-        @Notification # [notification] 
-        @Earning # [earning] 
-    - notifications
-    - profile 
-        @ChangePassword 
-    - orders
-        @[CRUD]Orders
-    - notifications
-    - settings
 
 (63 tasks)

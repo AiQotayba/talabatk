@@ -18,11 +18,19 @@ const ORDER_STATUS_TABS: TabItem[] = [
     { id: 'delivered', label: 'مكتملة', icon: 'checkmark-circle' },
 ];
 
+const MAP_TYPE_TABS: TabItem[] = [
+    { id: 'orders', label: 'الطلبات', icon: 'receipt' },
+    { id: 'drivers', label: 'السائقين', icon: 'car' },
+    { id: 'both', label: 'الكل', icon: 'layers' },
+];
+
 export default function AdminMapScreen() {
     const [activeTab, setActiveTab] = useState('all');
+    const [mapType, setMapType] = useState('orders');
     const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+    const [selectedDriver, setSelectedDriver] = useState<any | null>(null);
 
-    const { data: orders, isLoading }: any = useQuery({
+    const { data: orders, isLoading: isLoadingOrders }: any = useQuery({
         queryKey: ['admin-map-orders', activeTab],
         queryFn: async () => {
             const response = await apiClient.get<{ data: any }>('/admin/map', {
@@ -30,20 +38,46 @@ export default function AdminMapScreen() {
             });
             return response.data || [];
         },
+        enabled: mapType === 'orders' || mapType === 'both',
     });
 
+    const { data: drivers, isLoading: isLoadingDrivers }: any = useQuery({
+        queryKey: ['admin-map-drivers'],
+        queryFn: async () => {
+            const response = await apiClient.get<{ data: any }>('/admin/map/drivers');
+            return response.data || [];
+        },
+        enabled: mapType === 'drivers' || mapType === 'both',
+    });
+
+    const isLoading = isLoadingOrders || isLoadingDrivers;
+
     // Filter orders with valid coordinates
-    const ordersWithLocation = orders?.filter(
+    const ordersWithLocation = (mapType === 'orders' || mapType === 'both') ? (orders?.filter(
         (order: any) =>
             order.address?.lat &&
             order.address?.lng &&
             order.address.lat !== 0 &&
             order.address.lng !== 0
-    ) || [];
+    ) || []) : [];
 
-    // Calculate map region to show all orders
+    // Filter drivers with valid coordinates
+    const driversWithLocation = (mapType === 'drivers' || mapType === 'both') ? (drivers?.filter(
+        (driver: any) =>
+            driver.lat &&
+            driver.lng &&
+            driver.lat !== 0 &&
+            driver.lng !== 0
+    ) || []) : [];
+
+    // Calculate map region to show all orders and drivers
     const getMapRegion = () => {
-        if (ordersWithLocation.length === 0) {
+        const allPoints = [
+            ...ordersWithLocation.map((o: any) => ({ lat: o.address!.lat!, lng: o.address!.lng! })),
+            ...driversWithLocation.map((d: any) => ({ lat: d.lat, lng: d.lng })),
+        ];
+
+        if (allPoints.length === 0) {
             return {
                 latitude: 36.0156, // Maarat Misrin default
                 longitude: 36.6731,
@@ -52,8 +86,8 @@ export default function AdminMapScreen() {
             };
         }
 
-        const lats = ordersWithLocation.map((o: any) => o.address!.lat!);
-        const lngs = ordersWithLocation.map((o: any) => o.address!.lng!);
+        const lats = allPoints.map((p) => p.lat);
+        const lngs = allPoints.map((p) => p.lng);
 
         const minLat = Math.min(...lats);
         const maxLat = Math.max(...lats);
@@ -103,10 +137,18 @@ export default function AdminMapScreen() {
     return (
         <View className="flex-1 bg-gray-50" style={{ direction: 'rtl' }}>
             <View className="bg-white px-6 py-4 border-b border-gray-200">
-                <Header title="خريطة الطلبات" description={`${ordersWithLocation.length} طلب على الخريطة`} />
-                <View className="mt-4">
-                    <Tabs tabs={ORDER_STATUS_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
+                <Header
+                    title="خريطة الطلبات والسائقين"
+                    description={`${ordersWithLocation.length} طلب، ${driversWithLocation.length} سائق`}
+                />
+                <View className="mt-4 mb-3">
+                    <Tabs tabs={MAP_TYPE_TABS} activeTab={mapType} onTabChange={setMapType} />
                 </View>
+                {(mapType === 'orders' || mapType === 'both') && (
+                    <View className="mt-3">
+                        <Tabs tabs={ORDER_STATUS_TABS} activeTab={activeTab} onTabChange={setActiveTab} scrollable={true} />
+                    </View>
+                )}
             </View>
 
             {isLoading ? (
@@ -125,16 +167,20 @@ export default function AdminMapScreen() {
                             urlTemplate="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                             maximumZ={19}
                         />
+                        {/* Order Markers */}
                         {ordersWithLocation.map((order: any) => {
                             const color = getStatusColor(order.status);
                             return (
                                 <Marker
-                                    key={order.id}
+                                    key={`order-${order.id}`}
                                     coordinate={{
                                         latitude: order.address!.lat!,
                                         longitude: order.address!.lng!,
                                     }}
-                                    onPress={() => setSelectedOrder(order)}
+                                    onPress={() => {
+                                        setSelectedOrder(order);
+                                        setSelectedDriver(null);
+                                    }}
                                 >
                                     <View className="items-center">
                                         <View
@@ -142,6 +188,33 @@ export default function AdminMapScreen() {
                                             style={{ backgroundColor: color }}
                                         >
                                             <Ionicons name={getStatusIcon(order.status) as any} size={16} color="#ffffff" />
+                                        </View>
+                                    </View>
+                                </Marker>
+                            );
+                        })}
+                        {/* Driver Markers */}
+                        {driversWithLocation.map((driver: any) => {
+                            const driverColor = driver.status === 'available' ? '#16a34a' :
+                                driver.status === 'busy' ? '#d97706' : '#6b7280';
+                            return (
+                                <Marker
+                                    key={`driver-${driver.id}`}
+                                    coordinate={{
+                                        latitude: driver.lat,
+                                        longitude: driver.lng,
+                                    }}
+                                    onPress={() => {
+                                        setSelectedDriver(driver);
+                                        setSelectedOrder(null);
+                                    }}
+                                >
+                                    <View className="items-center">
+                                        <View
+                                            className="w-10 h-10 rounded-full items-center justify-center border-2 border-white"
+                                            style={{ backgroundColor: driverColor }}
+                                        >
+                                            <Ionicons name="car" size={20} color="#ffffff" />
                                         </View>
                                     </View>
                                 </Marker>
@@ -197,10 +270,59 @@ export default function AdminMapScreen() {
                         </Animated.View>
                     )}
 
-                    {ordersWithLocation.length === 0 && (
+                    {selectedDriver && (
+                        <Animated.View
+                            entering={FadeInDown.duration(300)}
+                            className="absolute bottom-4 left-4 right-4 bg-white rounded-xl p-4 shadow-lg"
+                        >
+                            <View className="flex-row items-start justify-between mb-2">
+                                <View className="flex-1">
+                                    <Text className="text-lg font-bold text-gray-900 text-start mb-1">
+                                        {selectedDriver.name || 'سائق'}
+                                    </Text>
+                                    <Text className="text-sm text-gray-600 text-start mb-2">
+                                        {selectedDriver.phone}
+                                    </Text>
+                                    <View className="flex-row items-center gap-2">
+                                        <View
+                                            className="px-3 py-1 rounded-full"
+                                            style={{
+                                                backgroundColor: selectedDriver.status === 'available' ? '#16a34a20' :
+                                                    selectedDriver.status === 'busy' ? '#d9770620' : '#6b728020'
+                                            }}
+                                        >
+                                            <Text
+                                                className="text-xs font-semibold"
+                                                style={{
+                                                    color: selectedDriver.status === 'available' ? '#16a34a' :
+                                                        selectedDriver.status === 'busy' ? '#d97706' : '#6b7280'
+                                                }}
+                                            >
+                                                {selectedDriver.status === 'available' ? 'متاح' :
+                                                    selectedDriver.status === 'busy' ? 'مشغول' : 'غير متاح'}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                </View>
+                                <TouchableOpacity onPress={() => setSelectedDriver(null)}>
+                                    <Ionicons name="close" size={20} color="#6b7280" />
+                                </TouchableOpacity>
+                            </View>
+                            <TouchableOpacity
+                                className="mt-3 bg-primary-600 rounded-lg py-2 px-4"
+                                onPress={() => {
+                                    router.push(`/(admin)/users/${selectedDriver.id}` as any);
+                                }}
+                            >
+                                <Text className="text-white font-semibold text-center">عرض التفاصيل</Text>
+                            </TouchableOpacity>
+                        </Animated.View>
+                    )}
+
+                    {ordersWithLocation.length === 0 && driversWithLocation.length === 0 && (
                         <View className="absolute inset-0 items-center justify-center bg-white/80">
                             <Ionicons name="map-outline" size={64} color="#d1d5db" />
-                            <Text className="text-gray-500 text-right mt-4">لا توجد طلبات على الخريطة</Text>
+                            <Text className="text-gray-500 text-right mt-4">لا توجد بيانات على الخريطة</Text>
                         </View>
                     )}
                 </View>

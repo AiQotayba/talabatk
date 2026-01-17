@@ -2,11 +2,25 @@
 ### Base URL: http://localhost:4000
 ### Documentation: http://localhost:4000/api/docs
 ### ====================================================== 
+ 
 
-@apiUrl = http://localhost:4000/api
-@clientToken = Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiMmE5ZGI3Ny0xOWQ2LTQxNmQtYTI1OC01NGJhYWI0NDZjMTIiLCJyb2xlIjoiY2xpZW50IiwiaWF0IjoxNzYyODEzMzI0LCJleHAiOjE3NjI4MTY5MjR9.NhiW6320estAbVFeN8nV4QzugwjnbtoJG1g7hoGsxIg
-@driverToken = Bearer YOUR_DRIVER_TOKEN_HERE
-@adminToken = Bearer YOUR_ADMIN_TOKEN_HERE
+GET http://localhost:4000/api/orders
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyYjM2OWE3Ni02ZmU2LTQ0OWQtYjYyNy04MGE5ZDA2ZmI2NjYiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NjcyODg4NDksImV4cCI6MTc2NzI5MjQ0OX0.WJzFVkEF7YF2UXZcCwlYMaSHLzf79Yw7ewjcfmQYDsE
+
+
+POST http://localhost:4000/api/messages
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyYjM2OWE3Ni02ZmU2LTQ0OWQtYjYyNy04MGE5ZDA2ZmI2NjYiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NjcyODg4NDksImV4cCI6MTc2NzI5MjQ0OX0.WJzFVkEF7YF2UXZcCwlYMaSHLzf79Yw7ewjcfmQYDsE 
+Content-Type: application/json
+
+{
+  "order_id": "7be15646-9910-4e50-b51d-9a36141e24fc",
+  "content": "Are you on your way?",
+  "message_type": "text"
+}
+
+
+
+
 
 POST {{apiUrl}}/auth/login
 Content-Type: application/json
@@ -405,3 +419,14 @@ GET {{apiUrl}}/admin/orders?page=1&limit=50
 Authorization: {{adminToken}}
 
 # All {{750}} - {{494}}
+
+
+ 
+POST http://localhost:4000/api/storage/images 
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+ 
+Content-Disposition: form-data; name="images"; filename="proof2.jpg"
+Content-Type: image/jpeg
+
+< ./uploads/image.jpeg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--

@@ -10,7 +10,7 @@
     "migrate": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
     "db": " npx prisma generate --schema=prisma/schema.prisma ; npx prisma db push",
-    "generate": "prisma generate",
+    "generate": "prisma generate --schema=prisma/schema.prisma",
     "seed": "ts-node prisma/seed.ts",
     "setup": "node scripts/setup.js",
     "test": "jest",

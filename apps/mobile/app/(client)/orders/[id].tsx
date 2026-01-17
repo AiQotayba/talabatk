@@ -15,6 +15,12 @@ export default function OrderChatScreen() {
       case 'complaint':
         router.push(`/(client)/orders/${id}/complaint`);
         break;
+      case 'update_address':
+        router.push(`/(client)/orders/${id}/update-address`);
+        break;
+      case 'show_qr_code':
+        router.push(`/(client)/orders/${id}/qr-code`);
+        break;
       default:
         break;
     }

@@ -10,7 +10,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { login } from '@/store/slices/auth.slice';
 import { ROUTES } from '@/utils/constants';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/contexts/ToastContext';
+import { Toast } from '@/utils/toast';
 
 const loginSchema = z.object({
   email: z.string().email('البريد الإلكتروني غير صحيح'),
@@ -23,7 +23,6 @@ export default function LoginScreen() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { isLoading } = useAppSelector((state) => state.auth);
-  const { showError } = useToast();
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -50,7 +49,7 @@ export default function LoginScreen() {
         router.replace(ROUTES.ADMIN_HOME);
       }
     } catch (error: any) {
-      showError(error || 'البريد الإلكتروني أو كلمة المرور غير صحيحة');
+      Toast.error('فشل تسجيل الدخول', error || 'البريد الإلكتروني أو كلمة المرور غير صحيحة');
     }
   };
 

@@ -15,7 +15,7 @@ export const updateDriverLocation = async (req: AuthenticatedRequest, res: Respo
 
     // Validate coordinates
     if (!isValidCoordinates(lat, lng)) {
-      sendError(res, 'Invalid coordinates', 400);
+      sendError(res, 'إحداثيات الموقع غير صحيحة. يرجى التحقق من موقعك والمحاولة مرة أخرى', 400);
       return;
     }
 
@@ -58,10 +58,10 @@ export const updateDriverLocation = async (req: AuthenticatedRequest, res: Respo
       location: { lat, lng },
       status,
       updated_at: updatedUser.metadata,
-    }, 'Driver location updated successfully');
+    }, 'تم تحديث موقع السائق بنجاح!');
   } catch (error) {
     console.error('Update driver location error:', error);
-    sendError(res, 'Failed to update driver location', 500);
+    sendError(res, 'حدث خطأ أثناء تحديث موقع السائق. يرجى المحاولة مرة أخرى', 500);
   }
 };
 
@@ -94,17 +94,17 @@ export const trackOrder = async (req: AuthenticatedRequest, res: Response): Prom
     });
 
     if (!order) {
-      sendError(res, 'Order not found', 404);
+      sendError(res, 'لم يتم العثور على الطلب. يرجى التحقق من رقم الطلب', 404);
       return;
     }
 
     // Check permissions
     if (userRole === UserRole.client && order.client_id !== userId) {
-      sendError(res, 'Access denied', 403);
+      sendError(res, 'ليس لديك صلاحية لمتابعة هذا الطلب. يمكنك فقط متابعة طلباتك الخاصة', 403);
       return;
     }
     if (userRole === UserRole.driver && order.driver_id !== userId) {
-      sendError(res, 'Access denied', 403);
+      sendError(res, 'ليس لديك صلاحية لمتابعة هذا الطلب. يمكنك فقط متابعة الطلبات المخصصة لك', 403);
       return;
     }
 
@@ -143,10 +143,10 @@ export const trackOrder = async (req: AuthenticatedRequest, res: Response): Prom
       };
     }
 
-    sendSuccess(res, trackingResponse, 'Order tracking data retrieved successfully');
+    sendSuccess(res, trackingResponse, 'تم تحميل بيانات متابعة الطلب بنجاح');
   } catch (error) {
     console.error('Track order error:', error);
-    sendError(res, 'Failed to retrieve order tracking data', 500);
+    sendError(res, 'حدث خطأ أثناء تحميل بيانات متابعة الطلب. يرجى المحاولة مرة أخرى', 500);
   }
 };
 
@@ -156,7 +156,7 @@ export const getNearbyDrivers = async (req: AuthenticatedRequest, res: Response)
 
     // Validate coordinates
     if (!isValidCoordinates(Number(lat), Number(lng))) {
-      sendError(res, 'Invalid coordinates', 400);
+      sendError(res, 'إحداثيات الموقع غير صحيحة. يرجى التحقق من موقعك والمحاولة مرة أخرى', 400);
       return;
     }
 
@@ -200,9 +200,9 @@ export const getNearbyDrivers = async (req: AuthenticatedRequest, res: Response)
       .filter(driver => driver && driver.distance <= Number(radius))
       .sort((a, b) => a!.distance - b!.distance);
 
-    sendSuccess(res, nearbyDrivers, 'Nearby drivers retrieved successfully');
+    sendSuccess(res, nearbyDrivers, 'تم تحميل قائمة السائقين القريبين بنجاح');
   } catch (error) {
     console.error('Get nearby drivers error:', error);
-    sendError(res, 'Failed to retrieve nearby drivers', 500);
+    sendError(res, 'حدث خطأ أثناء تحميل قائمة السائقين القريبين. يرجى المحاولة مرة أخرى', 500);
   }
 };

@@ -14,9 +14,9 @@ export default function DriverLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="orders" />
+      <Stack.Screen name="scan-qr" />
       <Stack.Screen name="notifications" />
       <Stack.Screen name="profile" />
     </Stack>
   );
 }
-

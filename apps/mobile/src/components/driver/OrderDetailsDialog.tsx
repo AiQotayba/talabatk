@@ -53,7 +53,7 @@ export default function OrderDetailsDialog({
                                 <View className="flex-row items-center gap-2 mb-2">
                                     <Ionicons name="receipt-outline" size={24} color="#E02020" />
                                     <Text className="font-bold text-gray-900 text-lg">
-                                        طلب #{order.code_order || order.id.slice(0, 8)}
+                                        طلب #{order.code_order || order.id?.slice(0, 8)}
                                     </Text>
                                 </View>
                             </View>

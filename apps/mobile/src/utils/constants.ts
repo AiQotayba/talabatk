@@ -1,10 +1,11 @@
 export const API_BASE_URL = __DEV__
-  // ? 'http://10.89.27.207 :4000/api'
+  // ? 'http://10.199.48.207:4000/api'
   ? 'http://192.168.1.7:4000/api'
   : 'https://api.delivery-app.com/api';
 
+// Socket URL should match API host and port (without /api)
 export const SOCKET_URL = __DEV__
-  ? 'http://192.168.1.3:4000'
+  ? 'http://192.168.1.7:4000'
   : 'https://api.delivery-app.com';
 
 export const STORAGE_KEYS = {

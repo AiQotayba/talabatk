@@ -40,15 +40,15 @@ for (const envPath of envPaths) {
       // Remove any null bytes or other problematic characters
       fileContent = fileContent.replace(/\0/g, '');
 
-      console.log('\n🔍 Raw .env file content:');
-      console.log('---');
-      const lines = fileContent.split('\n');
-      lines.forEach((line, index) => {
-        if (line.trim() && !line.trim().startsWith('#')) {
-          console.log(`Line ${index + 1}: ${line.trim()}`);
-        }
-      });
-      console.log('---\n');
+      // console.log('\n🔍 Raw .env file content:');
+      // console.log('---');
+      // const lines = fileContent.split('\n');
+      // lines.forEach((line, index) => {
+      //   if (line.trim() && !line.trim().startsWith('#')) {
+      //     console.log(`Line ${index + 1}: ${line.trim()}`);
+      //   }
+      // });
+      // console.log('---\n');
 
       // Write cleaned content to temp file and load it
       const tempPath = envPath + '.tmp';

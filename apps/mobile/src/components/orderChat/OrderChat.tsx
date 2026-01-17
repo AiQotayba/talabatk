@@ -8,15 +8,14 @@ import OrderDetails from './OrderDetails';
 import MessagesList from './MessagesList';
 import ChatInput from './ChatInput';
 import OrderActionsMenu from './OrderActionsMenu';
-import { useToast } from '@/contexts/ToastContext';
+import { Toast } from '@/utils/toast';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
 export default function OrderChat({ orderId, role, onBack, onAction }: OrderChatProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const scrollViewRef = useRef<any>(null);
-  const { showError } = useToast();
   const { showDialog, DialogComponent } = useConfirmDialog();
-  const { order, messages, isLoading, isSending, currentUserId, sendMessage, updateOrderStatus } = useOrderChat({
+  const { order, messages, isLoading, isSending, currentUserId, sendMessage, updateOrderStatus, updateOrderAddress, reactivateOrder, updateOrderContent, updateOrderPrice } = useOrderChat({
     orderId,
     role,
   });
@@ -42,6 +41,51 @@ export default function OrderChat({ orderId, role, onBack, onAction }: OrderChat
   const handleAction = (actionId: string) => {
     if (onAction) {
       onAction(actionId, { orderId, order });
+    }
+  };
+
+  const handleUpdateAddress = () => {
+    if (onAction) {
+      onAction('update_address', { orderId, order });
+    }
+  };
+
+  const handleReorder = () => {
+    showDialog({
+      title: 'إعادة تفعيل الطلب',
+      message: 'هل أنت متأكد من إعادة تفعيل هذا الطلب؟',
+      type: 'info',
+      onConfirm: () => reactivateOrder(),
+    });
+  };
+
+  const handleUpdateContent = () => {
+    if (onAction) {
+      onAction('update_content', { orderId, order });
+    }
+  };
+
+  const handleUpdatePrice = () => {
+    if (onAction) {
+      onAction('update_price', { orderId, order });
+    }
+  };
+
+  const handleCreateFeatured = () => {
+    if (onAction) {
+      onAction('create_featured', { orderId, order });
+    }
+  };
+
+  const handleShowQRCode = () => {
+    if (onAction) {
+      onAction('show_qr_code', { orderId, order });
+    }
+  };
+
+  const handleScanQRCode = () => {
+    if (onAction) {
+      onAction('scan_qr_code', { orderId, order });
     }
   };
 
@@ -78,6 +122,7 @@ export default function OrderChat({ orderId, role, onBack, onAction }: OrderChat
 
       <MessagesList 
         messages={messages} 
+        order={order}
         currentUserId={currentUserId} 
         isLoading={isLoading}
         scrollViewRef={scrollViewRef}
@@ -85,8 +130,7 @@ export default function OrderChat({ orderId, role, onBack, onAction }: OrderChat
 
       <ChatInput
         onSend={(content, attachments) => {
-          // TODO: Handle image upload and send message with attachments
-          sendMessage(content);
+          sendMessage(content, attachments);
         }}
         isSending={isSending}
         role={role}
@@ -104,6 +148,13 @@ export default function OrderChat({ orderId, role, onBack, onAction }: OrderChat
         onAccept={() => handleAction('accept')}
         onReject={() => handleAction('reject')}
         onUpdateStatus={(status) => handleAction(status)}
+        onUpdateAddress={handleUpdateAddress}
+        onReorder={handleReorder}
+        onUpdateContent={handleUpdateContent}
+        onUpdatePrice={handleUpdatePrice}
+        onCreateFeatured={handleCreateFeatured}
+        onShowQRCode={handleShowQRCode}
+        onScanQRCode={handleScanQRCode}
       />
 
       <DialogComponent />

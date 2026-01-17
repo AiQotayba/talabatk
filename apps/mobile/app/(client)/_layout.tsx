@@ -14,6 +14,7 @@ export default function ClientLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="orders" />
+      <Stack.Screen name="featured-orders" />
       <Stack.Screen name="addresses" />
       <Stack.Screen name="notifications" />
       <Stack.Screen name="policy" />

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import {  View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 import { useAppSelector } from '@/store/hooks';
 import { ROUTES, STORAGE_KEYS } from '@/utils/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -44,7 +44,6 @@ export default function Index() {
   if (!isAuthenticated) {
     return <Redirect href={ROUTES.LOGIN} />;
   }
-console.log(user?.role);
   // Redirect based on user role
   if (user?.role === 'client') {
     return <Redirect href={ROUTES.CLIENT_HOME} />;

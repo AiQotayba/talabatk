@@ -22,12 +22,12 @@ export const createComplaint = async (req: AuthenticatedRequest, res: Response):
     });
 
     if (!order) {
-      sendError(res, 'Order not found', 404);
+      sendError(res, 'لم يتم العثور على الطلب. يرجى التحقق من رقم الطلب', 404);
       return;
     }
 
     if (order.client_id !== clientId) {
-      sendError(res, 'Access denied', 403);
+      sendError(res, 'ليس لديك صلاحية لإرسال شكوى لهذا الطلب. يمكنك فقط إرسال شكاوى لطلباتك الخاصة', 403);
       return;
     }
 
@@ -37,7 +37,7 @@ export const createComplaint = async (req: AuthenticatedRequest, res: Response):
     });
 
     if (existingComplaint) {
-      sendError(res, 'Complaint already exists for this order', 400);
+      sendError(res, 'تم إرسال شكوى لهذا الطلب مسبقاً. يمكنك إرسال شكوى واحدة لكل طلب', 400);
       return;
     }
 
@@ -76,10 +76,10 @@ export const createComplaint = async (req: AuthenticatedRequest, res: Response):
       }
     });
 
-    sendSuccess(res, complaint, 'Complaint created successfully', 201);
+    sendSuccess(res, complaint, 'تم إرسال الشكوى بنجاح! سيتم مراجعتها من قبل فريق الدعم قريباً');
   } catch (error) {
     console.error('Create complaint error:', error);
-    sendError(res, 'Failed to create complaint', 500);
+    sendError(res, 'حدث خطأ أثناء إرسال الشكوى. يرجى المحاولة مرة أخرى', 500);
   }
 };
 
@@ -119,19 +119,19 @@ export const getComplaint = async (req: AuthenticatedRequest, res: Response): Pr
     });
 
     if (!complaint) {
-      sendError(res, 'Complaint not found', 404);
+      sendError(res, 'لم يتم العثور على الشكوى. يرجى التحقق من رقم الشكوى', 404);
       return;
     }
 
     // Check permissions
     if (userRole === 'client' && complaint.client_id !== userId) {
-      sendError(res, 'Access denied', 403);
+      sendError(res, 'ليس لديك صلاحية لعرض هذه الشكوى. يمكنك فقط عرض شكاويك الخاصة', 403);
       return;
     }
 
-    sendSuccess(res, complaint, 'Complaint retrieved successfully');
+    sendSuccess(res, complaint, 'تم تحميل تفاصيل الشكوى بنجاح');
   } catch (error) {
     console.error('Get complaint error:', error);
-    sendError(res, 'Failed to retrieve complaint', 500);
+    sendError(res, 'حدث خطأ أثناء تحميل تفاصيل الشكوى. يرجى المحاولة مرة أخرى', 500);
   }
 };

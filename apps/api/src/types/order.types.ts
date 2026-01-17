@@ -18,6 +18,8 @@ export interface OrderHistoryQuery {
   page?: number;
   limit?: number;
   status?: OrderStatus;
+  date_from?: string;
+  date_to?: string;
 }
 
 export interface NearbyDriversQuery {

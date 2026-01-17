@@ -23,9 +23,10 @@ interface OrderGridProps {
     orders: Order[];
     isLoading: boolean;
     emptyMessage?: string;
+    role?: 'client' | 'driver' | 'admin';
 }
 
-export default function OrderGrid({ orders, isLoading, emptyMessage = 'لا يوجد طلبات' }: OrderGridProps) {
+export default function OrderGrid({ orders, isLoading, emptyMessage = 'لا يوجد طلبات', role = 'admin' }: OrderGridProps) {
     if (isLoading) {
         return (
             <View className="flex-col gap-3">
@@ -50,7 +51,7 @@ export default function OrderGrid({ orders, isLoading, emptyMessage = 'لا يو
     return (
         <View className="flex-col gap-3">
             {orders.map((order, index) => (
-                <OrderCard key={order.id} order={order} index={index} role="admin" />
+                <OrderCard key={order.id} order={order} index={index} role={role} />
             ))}
         </View>
     );

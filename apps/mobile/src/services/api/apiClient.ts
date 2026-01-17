@@ -45,11 +45,11 @@ class ApiClient {
 
         // Log in development
         if (__DEV__) {
-          console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`, {
-            data: config.data instanceof FormData ? '[FormData]' : config.data,
-            params: config.params,
-            headers: config.data instanceof FormData ? 'FormData headers handled by RN' : config.headers,
-          });
+          // console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`, {
+          //   data: config.data instanceof FormData ? '[FormData]' : config.data,
+          //   params: config.params,
+          //   headers: config.data instanceof FormData ? 'FormData headers handled by RN' : config.headers,
+          // });
         }
 
         return config;
@@ -63,10 +63,10 @@ class ApiClient {
     this.client.interceptors.response.use(
       (response) => {
         if (__DEV__) {
-          console.log(`[API] ${response.config.method?.toUpperCase()} ${response.config.url}`, {
-            status: response.status,
-            data: response.data,
-          });
+          // console.log(`[API] ${response.config.method?.toUpperCase()} ${response.config.url}`, {
+          //   status: response.status,
+          //   data: response.data,
+          // });
         }
         return response;
       },
@@ -181,9 +181,10 @@ class ApiClient {
     // Create a fresh axios instance for file uploads to avoid interceptor issues
     const uploadClient = axios.create({
       baseURL: this.client.defaults.baseURL,
-      timeout: config?.timeout || 60000, // 60 seconds for file uploads
+      timeout: config?.timeout || 120000, // 120 seconds for file uploads (increased from 60)
       maxContentLength: Infinity,
       maxBodyLength: Infinity,
+      validateStatus: (status) => status < 500, // Don't throw on 4xx errors, let us handle them
     });
     
     // Add auth token to headers
@@ -192,6 +193,16 @@ class ApiClient {
     }
     
     try {
+      const fullUrl = `${this.client.defaults.baseURL}${url}`;
+      
+      if (__DEV__) {
+        console.log('[Upload] Starting upload request:', {
+          url: fullUrl,
+          hasFormData: formData instanceof FormData,
+          hasToken: !!token,
+        });
+      }
+
       // Make request directly without interceptors that might interfere
       const response = await uploadClient.post<ApiResponse<T>>(
         url,
@@ -212,19 +223,48 @@ class ApiClient {
           },
         }
       );
+      
+      if (__DEV__) {
+        console.log('[Upload] Success:', {
+          status: response.status,
+          data: response.data,
+        });
+      }
+      
       return response.data;
     } catch (error: any) {
       // Enhanced error logging for debugging
+      const fullUrl = `${this.client.defaults.baseURL}${url}`;
+      
       if (__DEV__) {
         console.error('[Upload Error]', {
           url,
+          fullUrl,
           error: error.message,
           code: error.code,
           response: error.response?.data,
+          status: error.response?.status,
           request: error.request,
-          stack: error.stack,
+          isNetworkError: error.code === 'NETWORK_ERROR' || error.message?.includes('Network Error'),
+          isTimeout: error.code === 'ECONNABORTED' || error.message?.includes('timeout'),
         });
       }
+      
+      // Provide better error message
+      if (error.code === 'NETWORK_ERROR' || error.message?.includes('Network Error')) {
+        const networkError = new Error(
+          `خطأ في الاتصال بالشبكة. يرجى التحقق من:\n1. اتصال الإنترنت\n2. أن الـ API server يعمل على ${fullUrl}\n3. أن الـ IP address صحيح`
+        );
+        (networkError as any).code = 'NETWORK_ERROR';
+        throw networkError;
+      }
+      
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        const timeoutError = new Error('انتهت مهلة الاتصال. يرجى المحاولة مرة أخرى');
+        (timeoutError as any).code = 'TIMEOUT';
+        throw timeoutError;
+      }
+      
       throw error;
     }
   }

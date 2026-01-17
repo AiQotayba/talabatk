@@ -4,6 +4,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 
 interface ReadyMessagesProps {
     onSelectMessage: (message: string) => void;
+    onSendQuickMessage?: (message: string) => void; // Send immediately without opening input
     visible: boolean;
 }
 
@@ -20,14 +21,27 @@ const READY_MESSAGES = [
     'تم التسليم بنجاح',
 ];
 
-export default function ReadyMessages({ onSelectMessage, visible }: ReadyMessagesProps) {
+export default function ReadyMessages({ onSelectMessage, onSendQuickMessage, visible }: ReadyMessagesProps) {
     if (!visible) return null;
+
+    const handleMessagePress = (message: string) => {
+        if (onSendQuickMessage) {
+            // Send immediately
+            onSendQuickMessage(message);
+        } else {
+            // Fill input field
+            onSelectMessage(message);
+        }
+    };
 
     return (
         <Animated.View entering={FadeInDown.duration(300)} className="bg-white border-t border-gray-200 px-4 py-3">
             <View className="flex-row items-center gap-2 mb-3" style={{ direction: 'rtl' }}>
                 <Ionicons name="chatbubbles-outline" size={18} color="#E02020" />
                 <Text className="text-sm font-semibold text-gray-700 text-right">رسائل جاهزة</Text>
+                {onSendQuickMessage && (
+                    <Text className="text-xs text-gray-500 text-right">(اضغط للإرسال المباشر)</Text>
+                )}
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ direction: 'rtl' }}>
                 <View className="flex-row gap-2">
@@ -35,7 +49,7 @@ export default function ReadyMessages({ onSelectMessage, visible }: ReadyMessage
                         <TouchableOpacity
                             key={index}
                             className="bg-primary-50 border border-primary-200 px-4 py-2 rounded-full"
-                            onPress={() => onSelectMessage(message)}
+                            onPress={() => handleMessagePress(message)}
                             activeOpacity={0.7}
                         >
                             <Text className="text-primary-700 text-sm text-right">{message}</Text>

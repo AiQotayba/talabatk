@@ -89,7 +89,7 @@ export const getAllOrders = async (req: AuthenticatedRequest, res: Response): Pr
     }, 'Orders retrieved successfully');
   } catch (error) {
     console.error('Get all orders error:', error);
-    sendError(res, 'Failed to retrieve orders', 500);
+    sendError(res, 'حدث خطأ أثناء تحميل الطلبات. يرجى المحاولة مرة أخرى', 500);
   }
 };
 
@@ -162,7 +162,7 @@ export const getAllDrivers = async (req: AuthenticatedRequest, res: Response): P
     }, 'Drivers retrieved successfully');
   } catch (error) {
     console.error('Get all drivers error:', error);
-    sendError(res, 'Failed to retrieve drivers', 500);
+    sendError(res, 'حدث خطأ أثناء تحميل قائمة السائقين. يرجى المحاولة مرة أخرى', 500);
   }
 };
 
@@ -176,7 +176,7 @@ export const updateDriver = async (req: AuthenticatedRequest, res: Response): Pr
     });
 
     if (!driver) {
-      sendError(res, 'Driver not found', 404);
+      sendError(res, 'لم يتم العثور على السائق. يرجى التحقق من رقم السائق', 404);
       return;
     }
 
@@ -202,10 +202,10 @@ export const updateDriver = async (req: AuthenticatedRequest, res: Response): Pr
       }
     });
 
-    sendSuccess(res, updatedDriver, 'Driver updated successfully');
+    sendSuccess(res, updatedDriver, 'تم تحديث بيانات السائق بنجاح! تم حفظ التغييرات');
   } catch (error) {
     console.error('Update driver error:', error);
-    sendError(res, 'Failed to update driver', 500);
+    sendError(res, 'حدث خطأ أثناء تحديث بيانات السائق. يرجى المحاولة مرة أخرى', 500);
   }
 };
 
@@ -320,10 +320,10 @@ export const getAnalytics = async (req: AuthenticatedRequest, res: Response): Pr
       })),
     };
 
-    sendSuccess(res, analytics, 'Analytics retrieved successfully');
+    sendSuccess(res, analytics, 'تم تحميل الإحصائيات بنجاح');
   } catch (error) {
     console.error('Get analytics error:', error);
-    sendError(res, 'Failed to retrieve analytics', 500);
+    sendError(res, 'حدث خطأ أثناء تحميل الإحصائيات. يرجى المحاولة مرة أخرى', 500);
   }
 };
 
@@ -475,10 +475,10 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
       })),
     };
 
-    sendSuccess(res, stats, 'Dashboard stats retrieved successfully');
+    sendSuccess(res, stats, 'تم تحميل إحصائيات لوحة التحكم بنجاح');
   } catch (error) {
     console.error('Get dashboard stats error:', error);
-    sendError(res, 'Failed to retrieve dashboard stats', 500);
+    sendError(res, 'حدث خطأ أثناء تحميل إحصائيات لوحة التحكم. يرجى المحاولة مرة أخرى', 500);
   }
 };
 
@@ -521,7 +521,7 @@ export const getAllUsers = async (req: AuthenticatedRequest, res: Response): Pro
     }, 'Users retrieved successfully');
   } catch (error) {
     console.error('Get all users error:', error);
-    sendError(res, 'Failed to retrieve users', 500);
+    sendError(res, 'حدث خطأ أثناء تحميل قائمة المستخدمين. يرجى المحاولة مرة أخرى', 500);
   }
 };
 
@@ -550,7 +550,7 @@ export const getUserById = async (req: AuthenticatedRequest, res: Response): Pro
     });
 
     if (!user) {
-      sendError(res, 'User not found', 404);
+      sendError(res, 'لم يتم العثور على المستخدم. يرجى التحقق من رقم المستخدم', 404);
       return;
     }
 
@@ -605,10 +605,10 @@ export const getUserById = async (req: AuthenticatedRequest, res: Response): Pro
       })),
     };
 
-    sendSuccess(res, userWithStats, 'User details retrieved successfully');
+    sendSuccess(res, userWithStats, 'تم تحميل تفاصيل المستخدم بنجاح');
   } catch (error) {
     console.error('Get user by id error:', error);
-    sendError(res, 'Failed to retrieve user details', 500);
+    sendError(res, 'حدث خطأ أثناء تحميل تفاصيل المستخدم. يرجى المحاولة مرة أخرى', 500);
   }
 };
 
@@ -667,7 +667,7 @@ export const getComplaints = async (req: AuthenticatedRequest, res: Response): P
     }, 'Complaints retrieved successfully');
   } catch (error) {
     console.error('Get complaints error:', error);
-    sendError(res, 'Failed to retrieve complaints', 500);
+    sendError(res, 'حدث خطأ أثناء تحميل قائمة الشكاوى. يرجى المحاولة مرة أخرى', 500);
   }
 };
 
@@ -738,9 +738,294 @@ export const getMap = async (req: AuthenticatedRequest, res: Response): Promise<
       price_cents: order.price_cents ? Number(order.price_cents) : null,
     }));
 
-    sendSuccess(res, serializedOrders, 'Map orders retrieved successfully');
+    sendSuccess(res, serializedOrders, 'تم تحميل طلبات الخريطة بنجاح');
   } catch (error) {
     console.error('Get map error:', error);
-    sendError(res, 'Failed to retrieve map orders', 500);
+    sendError(res, 'حدث خطأ أثناء تحميل طلبات الخريطة. يرجى المحاولة مرة أخرى', 500);
+  }
+};
+
+export const getMapDrivers = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    // Get all drivers with their current location from metadata
+    const drivers = await prisma.user.findMany({
+      where: {
+        role: UserRole.driver,
+      },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        profile_photo_url: true,
+        metadata: true,
+      },
+    });
+
+    // Extract location from metadata and filter drivers with valid locations
+    const driversWithLocation = drivers
+      .map((driver) => {
+        const metadata = driver.metadata as any;
+        const location = metadata?.current_location;
+        
+        if (location && location.lat && location.lng) {
+          return {
+            id: driver.id,
+            name: driver.name,
+            phone: driver.phone,
+            profile_photo_url: driver.profile_photo_url,
+            lat: location.lat,
+            lng: location.lng,
+            status: metadata?.driver_status || 'offline',
+          };
+        }
+        return null;
+      })
+      .filter((driver) => driver !== null);
+
+    sendSuccess(res, driversWithLocation, 'تم تحميل مواقع السائقين على الخريطة بنجاح');
+  } catch (error) {
+    console.error('Get map drivers error:', error);
+    sendError(res, 'حدث خطأ أثناء تحميل مواقع السائقين. يرجى المحاولة مرة أخرى', 500);
+  }
+};
+
+// Featured Orders CRUD
+export const createFeaturedOrder = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { context, start_date, end_date, is_active = true } = req.body;
+
+    if (!context || !start_date || !end_date) {
+      sendError(res, 'يجب توفير المحتوى وتاريخ البدء وتاريخ الانتهاء. يرجى إكمال جميع الحقول المطلوبة', 400);
+      return;
+    }
+
+    const featuredOrder = await prisma.featuredOrder.create({
+      data: {
+        context,
+        start_date: new Date(start_date),
+        end_date: new Date(end_date),
+        is_active: Boolean(is_active),
+      },
+    });
+
+    sendSuccess(res, featuredOrder, 'تم إنشاء الطلب المميز بنجاح! سيظهر للعملاء في التطبيق');
+  } catch (error) {
+    console.error('Create featured order error:', error);
+    sendError(res, 'حدث خطأ أثناء إنشاء الطلب المميز. يرجى المحاولة مرة أخرى', 500);
+  }
+};
+
+export const getFeaturedOrders = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { page = 1, limit = 20, is_active } = req.query;
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const where: any = {};
+    if (is_active !== undefined) {
+      where.is_active = is_active === 'true';
+    }
+
+    const [featuredOrders, total] = await Promise.all([
+      prisma.featuredOrder.findMany({
+        where,
+        orderBy: { created_at: 'desc' },
+        skip,
+        take: Number(limit),
+      }),
+      prisma.featuredOrder.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / Number(limit));
+
+    sendPaginatedSuccess(res, featuredOrders, {
+      page: Number(page),
+      limit: Number(limit),
+      total,
+      totalPages,
+    }, 'تم تحميل الطلبات المميزة بنجاح');
+  } catch (error) {
+    console.error('Get featured orders error:', error);
+    sendError(res, 'حدث خطأ أثناء تحميل الطلبات المميزة. يرجى المحاولة مرة أخرى', 500);
+  }
+};
+
+export const getFeaturedOrderById = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const featuredOrder = await prisma.featuredOrder.findUnique({
+      where: { id },
+    });
+
+    if (!featuredOrder) {
+      sendError(res, 'لم يتم العثور على الطلب المميز. يرجى التحقق من رقم الطلب', 404);
+      return;
+    }
+
+    sendSuccess(res, featuredOrder, 'تم تحميل تفاصيل الطلب المميز بنجاح');
+  } catch (error) {
+    console.error('Get featured order by id error:', error);
+    sendError(res, 'حدث خطأ أثناء تحميل تفاصيل الطلب المميز. يرجى المحاولة مرة أخرى', 500);
+  }
+};
+
+export const updateFeaturedOrder = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { context, start_date, end_date, is_active } = req.body;
+
+    const updateData: any = {};
+    if (context !== undefined) updateData.context = context;
+    if (start_date !== undefined) updateData.start_date = new Date(start_date);
+    if (end_date !== undefined) updateData.end_date = new Date(end_date);
+    if (is_active !== undefined) updateData.is_active = Boolean(is_active);
+
+    const featuredOrder = await prisma.featuredOrder.update({
+      where: { id },
+      data: updateData,
+    });
+
+    sendSuccess(res, featuredOrder, 'تم تحديث الطلب المميز بنجاح! تم حفظ التغييرات');
+  } catch (error) {
+    console.error('Update featured order error:', error);
+    if ((error as any).code === 'P2025') {
+      sendError(res, 'لم يتم العثور على الطلب المميز. يرجى التحقق من رقم الطلب', 404);
+    } else {
+      sendError(res, 'حدث خطأ أثناء تحديث الطلب المميز. يرجى المحاولة مرة أخرى', 500);
+    }
+  }
+};
+
+export const deleteFeaturedOrder = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    await prisma.featuredOrder.delete({
+      where: { id },
+    });
+
+    sendSuccess(res, null, 'تم حذف الطلب المميز بنجاح');
+  } catch (error) {
+    console.error('Delete featured order error:', error);
+    if ((error as any).code === 'P2025') {
+      sendError(res, 'لم يتم العثور على الطلب المميز. يرجى التحقق من رقم الطلب', 404);
+    } else {
+      sendError(res, 'حدث خطأ أثناء حذف الطلب المميز. يرجى المحاولة مرة أخرى', 500);
+    }
+  }
+};
+
+// Banners CRUD
+export const createBanner = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { title, image_url, link, order_index = 0, is_active = true } = req.body;
+
+    if (!image_url) {
+      sendError(res, 'يجب توفير رابط الصورة. يرجى إضافة رابط صورة للإعلان', 400);
+      return;
+    }
+
+    const banner = await prisma.banner.create({
+      data: {
+        title,
+        image_url,
+        link,
+        order_index: Number(order_index),
+        is_active: Boolean(is_active),
+      },
+    });
+
+    sendSuccess(res, banner, 'تم إنشاء الإعلان بنجاح! سيظهر في التطبيق', 201);
+  } catch (error) {
+    console.error('Create banner error:', error);
+    sendError(res, 'حدث خطأ أثناء إنشاء الإعلان. يرجى المحاولة مرة أخرى', 500);
+  }
+};
+
+export const getBanners = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { is_active } = req.query;
+
+    const where: any = {};
+    if (is_active !== undefined) {
+      where.is_active = is_active === 'true';
+    }
+
+    const banners = await prisma.banner.findMany({
+      where,
+      orderBy: { order_index: 'asc' },
+    });
+
+    sendSuccess(res, banners, 'تم تحميل الإعلانات بنجاح');
+  } catch (error) {
+    console.error('Get banners error:', error);
+    sendError(res, 'حدث خطأ أثناء تحميل الإعلانات. يرجى المحاولة مرة أخرى', 500);
+  }
+};
+
+export const getBannerById = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const banner = await prisma.banner.findUnique({
+      where: { id },
+    });
+
+    if (!banner) {
+      sendError(res, 'لم يتم العثور على الإعلان. يرجى التحقق من رقم الإعلان', 404);
+      return;
+    }
+
+    sendSuccess(res, banner, 'تم تحميل تفاصيل الإعلان بنجاح');
+  } catch (error) {
+    console.error('Get banner by id error:', error);
+    sendError(res, 'حدث خطأ أثناء تحميل تفاصيل الإعلان. يرجى المحاولة مرة أخرى', 500);
+  }
+};
+
+export const updateBanner = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { title, image_url, link, order_index, is_active } = req.body;
+
+    const updateData: any = {};
+    if (title !== undefined) updateData.title = title;
+    if (image_url !== undefined) updateData.image_url = image_url;
+    if (link !== undefined) updateData.link = link;
+    if (order_index !== undefined) updateData.order_index = Number(order_index);
+    if (is_active !== undefined) updateData.is_active = Boolean(is_active);
+
+    const banner = await prisma.banner.update({
+      where: { id },
+      data: updateData,
+    });
+
+    sendSuccess(res, banner, 'تم تحديث الإعلان بنجاح! تم حفظ التغييرات');
+  } catch (error) {
+    console.error('Update banner error:', error);
+    if ((error as any).code === 'P2025') {
+      sendError(res, 'لم يتم العثور على الإعلان. يرجى التحقق من رقم الإعلان', 404);
+    } else {
+      sendError(res, 'حدث خطأ أثناء تحديث الإعلان. يرجى المحاولة مرة أخرى', 500);
+    }
+  }
+};
+
+export const deleteBanner = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    await prisma.banner.delete({
+      where: { id },
+    });
+
+    sendSuccess(res, null, 'تم حذف الإعلان بنجاح');
+  } catch (error) {
+    console.error('Delete banner error:', error);
+    if ((error as any).code === 'P2025') {
+      sendError(res, 'لم يتم العثور على الإعلان. يرجى التحقق من رقم الإعلان', 404);
+    } else {
+      sendError(res, 'حدث خطأ أثناء حذف الإعلان. يرجى المحاولة مرة أخرى', 500);
+    }
   }
 };

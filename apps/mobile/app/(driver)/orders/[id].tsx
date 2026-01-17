@@ -3,7 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/services/api/apiClient';
 import { OrderChat } from '@/components/orderChat';
-import { useToast } from '@/contexts/ToastContext';
+import { Toast } from '@/utils/toast';
 import { useState } from 'react';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
@@ -11,7 +11,6 @@ export default function DriverOrderChatScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
     const queryClient = useQueryClient();
-    const { showSuccess, showError } = useToast();
     const [confirmDialog, setConfirmDialog] = useState<{
         visible: boolean;
         title: string;
@@ -35,10 +34,10 @@ export default function DriverOrderChatScreen() {
             queryClient.invalidateQueries({ queryKey: ['driver-pending-orders'] });
             queryClient.invalidateQueries({ queryKey: ['driver-orders'] });
             queryClient.invalidateQueries({ queryKey: ['order', id] });
-            showSuccess('تم قبول الطلب بنجاح');
+            Toast.success('تم القبول بنجاح', 'تم قبول الطلب بنجاح! يمكنك الآن البدء في التوصيل');
         },
         onError: (error: any) => {
-            showError(error.message || 'فشل قبول الطلب');
+            Toast.error('فشل القبول', error.message || 'حدث خطأ أثناء قبول الطلب. يرجى المحاولة مرة أخرى');
         },
     });
 
@@ -51,11 +50,11 @@ export default function DriverOrderChatScreen() {
             queryClient.invalidateQueries({ queryKey: ['driver-pending-orders'] });
             queryClient.invalidateQueries({ queryKey: ['driver-orders'] });
             queryClient.invalidateQueries({ queryKey: ['order', id] });
-            showSuccess('تم رفض الطلب');
+            Toast.success('تم الرفض', 'تم رفض الطلب بنجاح. سيتم إرساله لسائق آخر');
             router.back();
         },
         onError: (error: any) => {
-            showError(error.message || 'فشل رفض الطلب');
+            Toast.error('فشل الرفض', error.message || 'حدث خطأ أثناء رفض الطلب. يرجى المحاولة مرة أخرى');
         },
     });
 
@@ -67,10 +66,10 @@ export default function DriverOrderChatScreen() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['order', id] });
             queryClient.invalidateQueries({ queryKey: ['driver-orders'] });
-            showSuccess('تم تحديث حالة الطلب بنجاح');
+            Toast.success('تم التحديث', 'تم تحديث حالة الطلب بنجاح');
         },
         onError: (error: any) => {
-            showError(error.message || 'فشل تحديث حالة الطلب');
+            Toast.error('فشل التحديث', error.message || 'حدث خطأ أثناء تحديث حالة الطلب. يرجى المحاولة مرة أخرى');
         },
     });
 
@@ -130,6 +129,12 @@ export default function DriverOrderChatScreen() {
                     'info',
                     () => updateStatusMutation.mutate('delivered')
                 );
+                break;
+            case 'show_qr_code':
+                router.push(`/(driver)/orders/${id}/qr-code`);
+                break;
+            case 'scan_qr_code':
+                router.push('/(driver)/orders/scan-qr');
                 break;
             default:
                 break;

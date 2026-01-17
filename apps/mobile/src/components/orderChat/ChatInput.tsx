@@ -1,7 +1,9 @@
-import { useState } from 'react';
-import { View, TextInput, TouchableOpacity, ActivityIndicator, Image, Alert } from 'react-native';
+import { useState, useCallback } from 'react';
+import { View, TextInput, TouchableOpacity, ActivityIndicator, Image, Modal, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import { Toast } from '@/utils/toast';
 import ReadyMessages from './ReadyMessages';
 
 interface ChatInputProps {
@@ -22,6 +24,7 @@ export default function ChatInput({
   const [messageText, setMessageText] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showReadyMessagesList, setShowReadyMessagesList] = useState(false);
+  const [showImageOptions, setShowImageOptions] = useState(false);
 
   const handleSend = () => {
     if ((messageText.trim() || selectedImage) && !isSending && !disabled) {
@@ -32,56 +35,64 @@ export default function ChatInput({
     }
   };
 
-  const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('إذن مطلوب', 'نحتاج إلى إذن للوصول إلى الصور');
-      return;
+  const pickImage = useCallback(async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Toast.error('إذن مطلوب', 'يجب منح إذن الوصول إلى الصور');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        // @ts-ignore - MediaTypeOptions is deprecated but still works in this version
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setSelectedImage(result.assets[0].uri);
+        setShowImageOptions(false);
+      }
+    } catch (error: any) {
+      console.error('Image picker error:', error);
+      Toast.error('فشل الاختيار', error?.message || 'حدث خطأ أثناء اختيار الصورة');
     }
+  }, []);
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      // @ts-ignore - MediaTypeOptions is deprecated but still works in this version
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.8,
-    });
+  const takePhoto = useCallback(async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Toast.error('إذن مطلوب', 'يجب منح إذن الوصول إلى الكاميرا');
+        return;
+      }
 
-    if (!result.canceled && result.assets[0]) {
-      setSelectedImage(result.assets[0].uri);
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setSelectedImage(result.assets[0].uri);
+        setShowImageOptions(false);
+      }
+    } catch (error: any) {
+      console.error('Camera error:', error);
+      Toast.error('فشل التقاط الصورة', error?.message || 'حدث خطأ أثناء التقاط الصورة');
     }
-  };
+  }, []);
 
-  const takePhoto = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('إذن مطلوب', 'نحتاج إلى إذن للوصول إلى الكاميرا');
-      return;
+  const handleOptionSelect = useCallback((option: 'camera' | 'gallery') => {
+    setShowImageOptions(false);
+    if (option === 'camera') {
+      takePhoto();
+    } else {
+      pickImage();
     }
-
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.8,
-    });
-
-    if (!result.canceled && result.assets[0]) {
-      setSelectedImage(result.assets[0].uri);
-    }
-  };
-
-  const showImageOptions = () => {
-    Alert.alert(
-      'اختر صورة',
-      '',
-      [
-        { text: 'الكاميرا', onPress: takePhoto },
-        { text: 'المعرض', onPress: pickImage },
-        { text: 'إلغاء', style: 'cancel' },
-      ],
-      { cancelable: true }
-    );
-  };
+  }, [takePhoto, pickImage]);
 
   const handleSelectReadyMessage = (message: string) => {
     setMessageText(message);
@@ -93,6 +104,11 @@ export default function ChatInput({
       {showReadyMessages && role === 'driver' && (
         <ReadyMessages 
           onSelectMessage={handleSelectReadyMessage}
+          onSendQuickMessage={(message) => {
+            // Send message immediately
+            onSend(message.trim());
+            setShowReadyMessagesList(false);
+          }}
           visible={showReadyMessagesList}
         />
       )}
@@ -132,7 +148,7 @@ export default function ChatInput({
           
           <TouchableOpacity
             className="bg-gray-100 rounded-xl px-3 py-3"
-            onPress={showImageOptions}
+            onPress={() => setShowImageOptions(true)}
             activeOpacity={0.7}
           >
             <Ionicons name="image-outline" size={22} color="#6b7280" />
@@ -171,6 +187,60 @@ export default function ChatInput({
             )}
           </TouchableOpacity>
         </View>
+
+        {/* Image Source Selection Dialog */}
+        <Modal
+          visible={showImageOptions}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowImageOptions(false)}
+        >
+          <TouchableOpacity
+            className="flex-1 bg-black/50 items-center justify-center px-4"
+            activeOpacity={1}
+            onPress={() => setShowImageOptions(false)}
+          >
+            <Animated.View
+              entering={FadeIn.duration(200)}
+              exiting={FadeOut.duration(150)}
+              className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl"
+              style={{ direction: 'rtl' }}
+              onStartShouldSetResponder={() => true}
+            >
+              <Text className="text-xl font-bold text-gray-900 text-start mb-4">
+                اختر صورة
+              </Text>
+
+              <TouchableOpacity
+                className="flex-row items-center py-4 px-4 rounded-xl bg-gray-50 mb-3"
+                onPress={() => handleOptionSelect('camera')}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="camera" size={24} color="#E02020" style={{ marginRight: 12 }} />
+                <Text className="text-base text-gray-900 text-start flex-1">الكاميرا</Text>
+                <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className="flex-row items-center py-4 px-4 rounded-xl bg-gray-50 mb-3"
+                onPress={() => handleOptionSelect('gallery')}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="images" size={24} color="#E02020" style={{ marginRight: 12 }} />
+                <Text className="text-base text-gray-900 text-start flex-1">المعرض</Text>
+                <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className="flex-row items-center justify-center py-3 px-4 rounded-xl border-2 border-gray-200 mt-2"
+                onPress={() => setShowImageOptions(false)}
+                activeOpacity={0.7}
+              >
+                <Text className="text-base font-semibold text-gray-700">إلغاء</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          </TouchableOpacity>
+        </Modal>
       </View>
     </>
   );

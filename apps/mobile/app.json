@@ -28,7 +28,8 @@
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION"
+        "ACCESS_BACKGROUND_LOCATION",
+        "CAMERA"
       ],
       "navigationBar": {
         "visible": "leanback"
@@ -55,6 +56,12 @@
         {
           "icon": "./assets/logo.png",
           "color": "#ffffff"
+        }
+      ],
+      [
+        "expo-barcode-scanner",
+        {
+          "cameraPermission": "Allow Delivery App to access your camera to scan QR codes."
         }
       ],
       "expo-secure-store",

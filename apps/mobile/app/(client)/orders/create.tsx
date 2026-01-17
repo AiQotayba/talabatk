@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator, Modal } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -23,6 +23,7 @@ type CreateOrderFormData = z.infer<typeof createOrderSchema>;
 
 export default function CreateOrderScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ featuredOrderContext?: string }>();
   const dispatch = useAppDispatch();
   const queryClient = useQueryClient();
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
@@ -45,9 +46,17 @@ export default function CreateOrderScreen() {
   } = useForm<CreateOrderFormData>({
     resolver: zodResolver(createOrderSchema),
     defaultValues: {
+      content: params.featuredOrderContext || '',
       // payment_method: 'cash',
     },
   });
+
+  // Pre-fill content if coming from featured order
+  useEffect(() => {
+    if (params.featuredOrderContext) {
+      setValue('content', params.featuredOrderContext);
+    }
+  }, [params.featuredOrderContext, setValue]);
 
   // Create order mutation
   const createOrderMutation = useMutation({

@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Order } from '@/types/order.types';
 import { OrderChatRole } from './types';
-import { formatOrderId, getStatusText, getStatusColor, getStatusIcon } from './utils';
+import { formatOrderId } from './utils';
 import GetStatus from '../atoms/GetStatus';
 
 interface OrderChatHeaderProps {

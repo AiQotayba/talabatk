@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAppSelector } from '@/store/hooks';
 import { apiClient } from '@/services/api/apiClient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useToast } from '@/contexts/ToastContext';
+import { Toast } from '@/utils/toast';
 import Header from '@/components/ui/header';
 
 interface ProfileFormData {
@@ -18,7 +18,6 @@ export default function DriverEditProfileScreen() {
     const router = useRouter();
     const queryClient = useQueryClient();
     const { user } = useAppSelector((state) => state.auth);
-    const { showSuccess, showError } = useToast();
 
     const { data: profile, isLoading } = useQuery({
         queryKey: ['driver-profile'],
@@ -51,11 +50,11 @@ export default function DriverEditProfileScreen() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['driver-profile'] });
-            showSuccess('تم تحديث الملف الشخصي بنجاح');
+            Toast.success('تم التحديث بنجاح', 'تم تحديث الملف الشخصي بنجاح!');
             router.back();
         },
         onError: (error: any) => {
-            showError(error.message || 'فشل تحديث الملف الشخصي');
+            Toast.error('فشل التحديث', error.message || 'حدث خطأ أثناء تحديث الملف الشخصي. يرجى المحاولة مرة أخرى');
         },
     });
 

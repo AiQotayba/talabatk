@@ -2,7 +2,7 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 import Snackbar, { SnackbarType } from '@/components/ui/Snackbar';
 
 interface ToastContextType {
-    showToast: (message: string, type?: SnackbarType, duration?: number) => void;
+    Toast: (message: string, type?: SnackbarType, duration?: number) => void;
     showSuccess: (message: string) => void;
     showError: (message: string) => void;
     showInfo: (message: string) => void;
@@ -24,17 +24,17 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         duration: 3000,
     });
 
-    const showToast = (message: string, type: SnackbarType = 'info', duration: number = 3000) => {
+    const Toast = (message: string, type: SnackbarType = 'info', duration: number = 3000) => {
         setToast({ visible: true, message, type, duration });
     };
 
-    const showSuccess = (message: string) => showToast(message, 'success');
-    const showError = (message: string) => showToast(message, 'error');
-    const showInfo = (message: string) => showToast(message, 'info');
-    const showWarning = (message: string) => showToast(message, 'warning');
+    const showSuccess = (message: string) => Toast(message, 'success');
+    const showError = (message: string) => Toast(message, 'error');
+    const showInfo = (message: string) => Toast(message, 'info');
+    const showWarning = (message: string) => Toast(message, 'warning');
 
     return (
-        <ToastContext.Provider value={{ showToast, showSuccess, showError, showInfo, showWarning }}>
+        <ToastContext.Provider value={{ Toast, showSuccess, showError, showInfo, showWarning }}>
             {children}
             <Snackbar
                 visible={toast.visible}

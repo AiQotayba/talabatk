@@ -15,7 +15,7 @@ export const authenticateToken = async (
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
-      sendError(res, 'Access token required', 401);
+      sendError(res, 'يجب تسجيل الدخول أولاً. يرجى تسجيل الدخول للوصول إلى هذه الصفحة', 401);
       return;
     }
 
@@ -35,26 +35,26 @@ export const authenticateToken = async (
     });
 
     if (!user) {
-      sendError(res, 'Invalid token', 401);
+      sendError(res, 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى', 401);
       return;
     }
 
     req.user = user as any;
     next();
   } catch (error) {
-    sendError(res, 'Invalid token', 401);
+    sendError(res, 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى', 401);
   }
 };
 
 export const requireRole = (roles: UserRole[]) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
-      sendError(res, 'Authentication required', 401);
+      sendError(res, 'يجب تسجيل الدخول أولاً. يرجى تسجيل الدخول للوصول إلى هذه الصفحة', 401);
       return;
     }
 
     if (!roles.includes(req.user.role)) {
-      sendError(res, 'Insufficient permissions', 403);
+      sendError(res, 'ليس لديك صلاحية للوصول إلى هذه الصفحة. يرجى التواصل مع المسؤول إذا كنت تعتقد أن هذا خطأ', 403);
       return;
     }
 

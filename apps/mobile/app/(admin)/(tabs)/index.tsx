@@ -71,7 +71,7 @@ export default function AdminDashboardScreen() {
   const quickActions = [
     {
       title: '  الطلبات',
-      icon: 'receipt', 
+      icon: 'receipt',
       bgColor: 'bg-primary-600/10',
       onPress: () => router.push('/(admin)/orders' as any),
     },
@@ -80,6 +80,18 @@ export default function AdminDashboardScreen() {
       icon: 'people',
       bgColor: 'bg-blue-600/10',
       onPress: () => router.push('/(admin)/users' as any),
+    },
+    {
+      title: 'الطلبات المميزة',
+      icon: 'star',
+      bgColor: 'bg-yellow-600/10',
+      onPress: () => router.push('/(admin)/featured-orders' as any),
+    },
+    {
+      title: 'البانرات',
+      icon: 'images',
+      bgColor: 'bg-purple-600/10',
+      onPress: () => router.push('/(admin)/banners' as any),
     },
     {
       title: 'التحليلات',
